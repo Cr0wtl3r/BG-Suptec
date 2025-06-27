@@ -1,0 +1,31 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "BG-SupTec",
+  "outputfilename": "BG-SupTec",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Bino",
+    "email": "a@a.com"
+  },
+  "info": {
+    "companyName": "Soluções VIP",
+    "productName": "BG-SupTec - Caixa de Ferramentas",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2024 Soluções VIP"
+  },
+  "windows": {
+    "manifest": "BG-SupTec.exe.manifest",
+    "icon": "appicon.png",
+    "webview2": "download",
+    "process": {
+      "disablewindowproc": false
+    },
+    "versioninfo": {
+      "fileversion": "1.0.0",
+      "productversion": "1.0.0"
+    }
+  }
+}
