@@ -10,7 +10,6 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-// InfoSistema - struct ATUALIZADA
 type InfoSistema struct {
 	NomeComputador  string `json:"nomeComputador"`
 	VersaoWindows   string `json:"versaoWindows"`

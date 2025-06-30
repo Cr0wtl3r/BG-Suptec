@@ -2,59 +2,57 @@
   import { createEventDispatcher } from "svelte";
   import AtivacaoWindows from "./features/AtivacaoWindows.svelte";
   import AtivacaoOffice from "./features/AtivacaoOffice.svelte";
-  import PainelInformacoes from "./features/PainelInformacoes.svelte";
   import FeatureRunner from "./features/FeatureRunner.svelte";
-  import BotaoVoltar from "./shared/BotaoVoltar.svelte";
 
   export let visao;
-  export let modulos;
+
   const dispatch = createEventDispatcher();
 
-  // Mapeamento das funcionalidades simples para seus comandos e descrições
-  const comandosSimples = {
+  const featureMap = {
     "Limpa cache DNS": {
+      desc: 'Executa o comando "ipconfig /flushdns" para limpar o cache de resolução de DNS local.',
       cmd: "ipconfig",
       args: ["/flushdns"],
-      desc: 'Executa o comando "ipconfig /flushdns" para limpar o cache de resolução de DNS local.',
     },
     "Desativa a Hibernação do Windows": {
+      desc: "Desativa o recurso de hibernação e remove o arquivo hiberfil.sys, liberando espaço em disco.",
       cmd: "powercfg",
       args: ["-h", "off"],
-      desc: "Desativa o recurso de hibernação e remove o arquivo hiberfil.sys, liberando espaço em disco.",
     },
-    // Adicione outras funções simples aqui no futuro
+    "Limpa e Reinicia Spool de Impressão": {
+      desc: "Para e reinicia o serviço de Spooler de Impressão, útil para resolver problemas de impressoras travadas.",
+      cmd: "net",
+      args: ["stop", "spooler", "&&", "net", "start", "spooler"],
+    },
   };
+
+  function handleVoltar() {
+    dispatch("navigate", "Painel de Informações");
+  }
 </script>
 
 {#if visao === "Painel de Informações"}
-  <PainelInformacoes
-    {modulos}
-    on:navigate={(e) => dispatch("navigate", e.detail)}
-  />
+  <p>Erro: Visão do Painel deveria ser tratada pelo App.svelte</p>
 {:else if visao === "Windows - Ativação 180 dias"}
-  <AtivacaoWindows
-    on:voltar={() => dispatch("navigate", "Painel de Informações")}
-  />
+  <AtivacaoWindows on:voltar={handleVoltar} />
 {:else if visao === "Office - Ativação 180 dias"}
-  <AtivacaoOffice
-    on:voltar={() => dispatch("navigate", "Painel de Informações")}
-  />
-{:else if comandosSimples[visao]}
+  <AtivacaoOffice on:voltar={handleVoltar} />
+{:else if featureMap[visao]}
   <FeatureRunner
     titulo={visao}
-    descricao={comandosSimples[visao].desc}
-    comando={comandosSimples[visao].cmd}
-    args={comandosSimples[visao].args}
-    on:voltar={() => dispatch("navigate", "Painel de Informações")}
+    descricao={featureMap[visao].desc}
+    comando={featureMap[visao].cmd}
+    args={featureMap[visao].args}
+    on:voltar={handleVoltar}
   />
 {:else}
-  <div class="main-app">
-    <h1>{visao}</h1>
-    <p>Funcionalidade em desenvolvimento...</p>
-    <BotaoVoltar
-      on:click={() => dispatch("navigate", "Painel de Informações")}
-    />
-  </div>
+  <FeatureRunner
+    titulo={visao}
+    descricao="Esta funcionalidade ainda está em desenvolvimento."
+    textoBotao="Indisponível"
+    emExecucao={true}
+    on:voltar={handleVoltar}
+  />
 {/if}
 
 <style>

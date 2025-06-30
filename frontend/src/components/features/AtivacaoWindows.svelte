@@ -2,17 +2,16 @@
   import { onMount } from "svelte";
   import { EventsOn, EventsOff } from "../../../wailsjs/runtime";
   import { AtivarWindows } from "../../../wailsjs/go/main/App";
-
-  import LogPanel from "../shared/LogPanel.svelte";
-  import FeatureContainer from "../shared/FeatureContainer.svelte";
+  import FeatureRunner from "./FeatureRunner.svelte"; // Usamos nosso novo runner!
 
   let logLines: string[] = ["Aguardando início..."];
   let emExecucao = false;
   let versaoSelecionada = "pro";
 
+  // A função 'iniciar' agora é chamada pelo evento 'start' do FeatureRunner
   async function iniciar() {
     emExecucao = true;
-    logLines = ["Iniciando ativação..."];
+    logLines = [];
     try {
       await AtivarWindows(versaoSelecionada);
     } catch (err) {
@@ -38,12 +37,15 @@
   });
 </script>
 
-<FeatureContainer titulo="Ativação do Windows (180 Dias)">
-  <p>
-    Esta função tentará ativar sua versão do Windows usando servidores KMS
-    públicos. Requer privilégios de Administrador.
-  </p>
-
+<FeatureRunner
+  titulo="Ativação do Windows (180 Dias)"
+  descricao="Esta função tentará ativar sua versão do Windows usando servidores KMS públicos. Requer privilégios de Administrador."
+  textoBotao="Iniciar Ativação do Windows"
+  bind:logLines
+  bind:emExecucao
+  on:start={iniciar}
+  on:voltar
+>
   <div class="config-section">
     <label for="versao-windows">Selecione a versão do Windows:</label>
     <select
@@ -57,19 +59,10 @@
       <option value="enterprise">Windows 10/11 Enterprise</option>
     </select>
   </div>
-
-  <button class="btn-executar" on:click={iniciar} disabled={emExecucao}>
-    {emExecucao ? "Ativando..." : "Iniciar Ativação do Windows"}
-  </button>
-
-  <LogPanel {logLines} />
-</FeatureContainer>
+</FeatureRunner>
 
 <style>
   .config-section {
-    margin: 25px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    margin-bottom: 25px;
   }
 </style>

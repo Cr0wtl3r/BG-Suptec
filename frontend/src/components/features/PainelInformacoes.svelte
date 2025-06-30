@@ -132,10 +132,9 @@
 </div>
 
 <style>
-  /* ESTILOS COMPLETAMENTE REFEITOS PARA SEREM ROBUSTOS */
   .dashboard-container {
-    width: clamp(800px, 95vw, 1400px);
-    height: clamp(550px, 95vh, 800px);
+    width: clamp(800px, 98vw, 1600px);
+    height: clamp(550px, 98vh, 800px);
     padding: 20px;
     box-sizing: border-box;
 
@@ -145,7 +144,6 @@
     border-radius: 12px;
     animation: fadeIn 0.5s ease-out;
 
-    /* AQUI ESTÁ A BASE DO LAYOUT: FLEXBOX */
     display: flex;
     gap: 25px;
   }
@@ -164,14 +162,13 @@
     color: var(--accent-orange);
   }
 
-  /* COLUNA DA ESQUERDA (INFORMAÇÕES) */
   .info-coluna {
-    flex-basis: 350px; /* Largura base de 350px */
-    flex-shrink: 0; /* Nunca vai encolher */
+    flex-basis: 350px;
+    flex-shrink: 0;
     background-color: rgba(12, 16, 89, 0.5);
     padding: 20px;
     border-radius: 8px;
-    overflow-y: auto; /* Tem seu próprio scroll se precisar */
+    overflow-y: auto;
   }
   .info-grid {
     display: grid;
@@ -196,15 +193,14 @@
     word-break: break-all;
   }
 
-  /* COLUNA DA DIREITA (FERRAMENTAS) */
   .modulos-coluna {
-    flex-grow: 1; /* Ocupa todo o resto do espaço */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    min-width: 0; /* Truque do flexbox para evitar overflow */
+    min-width: 0;
   }
   .campo-busca {
-    flex-shrink: 0; /* O campo de busca não encolhe */
+    flex-shrink: 0;
     width: 100%;
     box-sizing: border-box;
     padding: 10px;
@@ -215,16 +211,14 @@
     border-radius: 8px;
     font-size: 1rem;
   }
-
-  /* O CONTAINER DOS BOTÕES AGORA É O ELEMENTO QUE CRESCE E ROLA */
   .botoes-grid {
-    flex-grow: 1; /* Faz ele ocupar o espaço que sobra na coluna */
-    overflow-y: auto; /* E ele mesmo ganha o scroll */
+    flex-grow: 1;
+    overflow-y: auto;
     padding-right: 10px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 12px;
-    align-content: flex-start; /* Alinha os itens no topo */
+    align-content: flex-start;
   }
   .btn-funcao {
     padding: 15px;
@@ -248,20 +242,19 @@
     text-align: center;
   }
 
-  /* MEDIA QUERY PARA TRANSFORMAR EM COLUNA ÚNICA EM TELAS PEQUENAS */
   @media (max-width: 900px) {
     .dashboard-container {
-      flex-direction: column; /* Muda a direção para vertical */
+      flex-direction: column;
       width: 98vw;
       height: 98vh;
-      overflow-y: auto; /* O container principal se torna rolável */
+      overflow-y: auto;
       padding: 15px;
     }
     .info-coluna {
-      flex-basis: auto; /* Reseta a base de tamanho */
+      flex-basis: auto;
     }
     .modulos-coluna {
-      min-height: 300px; /* Garante uma altura mínima para a lista de ferramentas */
+      min-height: 300px;
     }
   }
 </style>

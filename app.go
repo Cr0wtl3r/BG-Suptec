@@ -21,7 +21,6 @@ type App struct {
 	senhaHasheada string
 }
 
-// Carrega o .env ao iniciar o app
 func init() {
 	err := godotenv.Load()
 	if err != nil {
