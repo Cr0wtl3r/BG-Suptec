@@ -52,6 +52,11 @@ func (a *App) emitLogAtivacao(tipo string, mensagem string) {
 	runtime.EventsEmit(a.ctx, eventName, mensagem)
 }
 
+// Nova função ExecutarComando que os componentes esperam
+func (a *App) ExecutarComando(comando string, args []string) (string, error) {
+	return syscmd.RunCommand("", comando, args...)
+}
+
 func (a *App) AtivarWindows(versao string) {
 	go func() {
 		time.Sleep(100 * time.Millisecond)

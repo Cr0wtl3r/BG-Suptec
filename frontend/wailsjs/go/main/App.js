@@ -10,6 +10,10 @@ export function AtivarWindows(arg1) {
   return window['go']['main']['App']['AtivarWindows'](arg1);
 }
 
+export function ExecutarComando(arg1, arg2) {
+  return window['go']['main']['App']['ExecutarComando'](arg1, arg2);
+}
+
 export function ExecutarComandoSimples(arg1, arg2, arg3) {
   return window['go']['main']['App']['ExecutarComandoSimples'](arg1, arg2, arg3);
 }

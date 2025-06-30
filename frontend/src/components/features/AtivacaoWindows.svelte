@@ -2,13 +2,12 @@
   import { onMount } from "svelte";
   import { EventsOn, EventsOff } from "../../../wailsjs/runtime";
   import { AtivarWindows } from "../../../wailsjs/go/main/App";
-  import FeatureRunner from "./FeatureRunner.svelte"; // Usamos nosso novo runner!
+  import FeatureRunner from "./FeatureRunner.svelte";
 
   let logLines: string[] = ["Aguardando início..."];
   let emExecucao = false;
   let versaoSelecionada = "pro";
 
-  // A função 'iniciar' agora é chamada pelo evento 'start' do FeatureRunner
   async function iniciar() {
     emExecucao = true;
     logLines = [];

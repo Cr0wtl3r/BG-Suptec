@@ -2,29 +2,14 @@
   import { createEventDispatcher } from "svelte";
   import AtivacaoWindows from "./features/AtivacaoWindows.svelte";
   import AtivacaoOffice from "./features/AtivacaoOffice.svelte";
+  import LimpaCacheDNS from "./features/LimpaCacheDNS.svelte";
+  import DesativaHibernacao from "./features/DesativaHibernacao.svelte";
+  import LimpaSpoolImpressao from "./features/LimpaSpoolImpressao.svelte";
   import FeatureRunner from "./features/FeatureRunner.svelte";
 
   export let visao;
 
   const dispatch = createEventDispatcher();
-
-  const featureMap = {
-    "Limpa cache DNS": {
-      desc: 'Executa o comando "ipconfig /flushdns" para limpar o cache de resolução de DNS local.',
-      cmd: "ipconfig",
-      args: ["/flushdns"],
-    },
-    "Desativa a Hibernação do Windows": {
-      desc: "Desativa o recurso de hibernação e remove o arquivo hiberfil.sys, liberando espaço em disco.",
-      cmd: "powercfg",
-      args: ["-h", "off"],
-    },
-    "Limpa e Reinicia Spool de Impressão": {
-      desc: "Para e reinicia o serviço de Spooler de Impressão, útil para resolver problemas de impressoras travadas.",
-      cmd: "net",
-      args: ["stop", "spooler", "&&", "net", "start", "spooler"],
-    },
-  };
 
   function handleVoltar() {
     dispatch("navigate", "Painel de Informações");
@@ -37,14 +22,12 @@
   <AtivacaoWindows on:voltar={handleVoltar} />
 {:else if visao === "Office - Ativação 180 dias"}
   <AtivacaoOffice on:voltar={handleVoltar} />
-{:else if featureMap[visao]}
-  <FeatureRunner
-    titulo={visao}
-    descricao={featureMap[visao].desc}
-    comando={featureMap[visao].cmd}
-    args={featureMap[visao].args}
-    on:voltar={handleVoltar}
-  />
+{:else if visao === "Limpa cache DNS"}
+  <LimpaCacheDNS on:voltar={handleVoltar} />
+{:else if visao === "Desativa a Hibernação do Windows"}
+  <DesativaHibernacao on:voltar={handleVoltar} />
+{:else if visao === "Limpa e Reinicia Spool de Impressão"}
+  <LimpaSpoolImpressao on:voltar={handleVoltar} />
 {:else}
   <FeatureRunner
     titulo={visao}

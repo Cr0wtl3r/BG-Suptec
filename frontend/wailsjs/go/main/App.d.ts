@@ -6,6 +6,8 @@ export function AtivarOffice(arg1:string):Promise<void>;
 
 export function AtivarWindows(arg1:string):Promise<void>;
 
+export function ExecutarComando(arg1:string,arg2:Array<string>):Promise<string>;
+
 export function ExecutarComandoSimples(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
 
 export function Login(arg1:string):Promise<boolean>;
