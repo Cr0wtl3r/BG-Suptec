@@ -297,6 +297,8 @@ func (a *App) AtivarOffice(versao string) {
 		a.emitLogAtivacao("office", "--> Definindo porta KMS: 1688 (padrão)...")
 		output, err = syscmd.RunCommand(officePath, "cscript", osppPath, "/setprt:1688")
 		a.emitLogAtivacao("office", output)
+		if err != nil { a.emitLogAtivacao("office", "Aviso: Falha ao definir porta KMS. " + err.Error()) }
+
 
 		activationSuccessful := false
 		for _, server := range info.KMS_Servers {
