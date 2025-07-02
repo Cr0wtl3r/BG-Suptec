@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -20,24 +21,33 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+var compiledPasswordHash string
+
 type App struct {
 	ctx           context.Context
 	senhaHasheada string
 }
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Aviso: .env não carregado ou não encontrado. Variáveis de ambiente serão usadas.")
+	if compiledPasswordHash == "" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Println("Aviso: .env não carregado ou não encontrado. Tentando usar variáveis de ambiente ou senha compilada.")
+		}
 	}
 }
 
 func NewApp() *App {
-	senha := os.Getenv("PASSWORD")
-	if senha == "" {
-		log.Println("ERRO: PASSWORD não definido no .env ou variáveis de ambiente.")
+	if compiledPasswordHash != "" {
+		return &App{senhaHasheada: compiledPasswordHash}
 	}
-	return &App{senhaHasheada: senha}
+
+	hashDoEnv := os.Getenv("PASSWORD")
+	if hashDoEnv == "" {
+		log.Println("ERRO: PASSWORD (hash) não definido no .env ou como variável de ambiente. O login falhará.")
+	}
+
+	return &App{senhaHasheada: hashDoEnv}
 }
 
 func (a *App) startup(ctx context.Context) {
@@ -47,8 +57,8 @@ func (a *App) startup(ctx context.Context) {
 func (a *App) Login(senha string) bool {
 	hasher := sha256.New()
 	hasher.Write([]byte(senha))
-	hashSenha := hex.EncodeToString(hasher.Sum(nil))
-	return hashSenha == a.senhaHasheada
+	hashSenhaDigitada := hex.EncodeToString(hasher.Sum(nil))
+	return hashSenhaDigitada == a.senhaHasheada
 }
 
 func (a *App) emitLogAtivacao(tipo string, mensagem string) {
@@ -133,7 +143,6 @@ func (a *App) ObterInformacoesSistema() (sysinfo.InfoSistema, error) {
 	return sysinfo.GetInfo()
 }
 
-
 func (a *App) AtivarWindows(versao string) {
 	go func() {
 		time.Sleep(100 * time.Millisecond)
@@ -151,15 +160,20 @@ func (a *App) AtivarWindows(versao string) {
 		a.emitLogAtivacao("windows", "Iniciando ativação para Windows "+versao+"...")
 		a.emitLogAtivacao("windows", "--> Instalando chave do produto (GVLK)...")
 		slmgrPath := filepath.Join(os.Getenv("SystemRoot"), "System32", "slmgr.vbs")
+
 		output, err := syscmd.RunCommand("", "cscript", slmgrPath, "/ipk", key)
 		a.emitLogAtivacao("windows", output)
 		if err != nil {
 			a.emitLogAtivacao("windows", "--- FALHA AO INSTALAR CHAVE ---")
 			return
 		}
+
 		a.emitLogAtivacao("windows", "--> Definindo servidor KMS: kms.msguides.com...")
-		output, _ = syscmd.RunCommand("", "cscript", slmgrPath, "/skms", "kms.msguides.com")
+		output, err = syscmd.RunCommand("", "cscript", slmgrPath, "/skms", "kms.msguides.com")
 		a.emitLogAtivacao("windows", output)
+		if err != nil { a.emitLogAtivacao("windows", "Aviso: Falha ao definir KMS. Mas tentando ativar mesmo assim: " + err.Error()) }
+
+
 		a.emitLogAtivacao("windows", "--> Tentando ativar...")
 		output, err = syscmd.RunCommand("", "cscript", slmgrPath, "/ato")
 		a.emitLogAtivacao("windows", output)
@@ -171,64 +185,171 @@ func (a *App) AtivarWindows(versao string) {
 	}()
 }
 
+type OfficeVersionInfo struct {
+	ProdKey         string
+	UnPKeys         []string
+	LicensePatterns []string
+	KMS_Servers     []string
+}
+
 func (a *App) AtivarOffice(versao string) {
 	go func() {
 		a.emitLogAtivacao("office", "Iniciando ativação para Office...")
-		officePath, err := findOfficePath()
+		officePath, err := findOfficePathGo()
 		if err != nil {
 			a.emitLogAtivacao("office", "ERRO: "+err.Error())
-			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO ---")
+			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO GERAL ---")
 			return
 		}
 		a.emitLogAtivacao("office", "Pasta do Office encontrada em: "+officePath)
-		a.emitLogAtivacao("office", "--> Fechando processos do Office...")
-		syscmd.RunCommand("", "taskkill", "/f", "/im", "winword.exe", "/im", "excel.exe", "/im", "powerpnt.exe", "/im", "outlook.exe")
-		keys := map[string]string{
-			"2016": "XQNVK-8JYDB-WJ9W3-YJ8YR-WFG99",
-			"2021": "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
-			"2024": "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
+
+		versions := map[string]OfficeVersionInfo{
+			"2016": {
+				ProdKey:         "XQNVK-8JYDB-WJ9W3-YJ8YR-WFG99",
+				UnPKeys:         []string{"BTDRB", "KHGM9", "CPQVG"},
+				LicensePatterns: []string{`proplusvl_kms.*\.xrm-ms`},
+				KMS_Servers:     []string{"107.173.230.24","kms9.msguides.com", "23.226.136.46", "kms8.msguides.com"},
+			},
+			"2021": {
+				ProdKey:         "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
+				UnPKeys:         []string{"6F7TH"},
+				LicensePatterns: []string{`ProPlus2021VL_KMS.*\.xrm-ms`},
+				KMS_Servers:     []string{"107.173.230.24","kms9.msguides.com", "23.226.136.46", "kms8.msguides.com"},
+			},
+			"2024": {
+				ProdKey:         "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
+				UnPKeys:         []string{"6F7TH"},
+				LicensePatterns: []string{`ProPlus2024VL_KMS.*\.xrm-ms`},
+				KMS_Servers:     []string{"107.173.230.24","kms9.msguides.com", "23.226.136.46", "kms8.msguides.com"},
+			},
 		}
-		key, ok := keys[versao]
+
+		info, ok := versions[versao]
 		if !ok {
-			a.emitLogAtivacao("office", "ERRO: Versão do Office inválida.")
+			a.emitLogAtivacao("office", "ERRO: Versão do Office inválida. As versões suportadas são 2016, 2021, 2024.")
+			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO ---")
 			return
 		}
-		a.emitLogAtivacao("office", "--> Instalando chave do produto...")
-		output, err := syscmd.RunCommand(officePath, "cscript", "ospp.vbs", "/inpkey:"+key)
+
+		a.emitLogAtivacao("office", "--> Fechando processos do Office...")
+		_, _ = syscmd.RunCommand("", "taskkill", "/f", "/im", "winword.exe", "/im", "excel.exe", "/im", "powerpnt.exe", "/im", "outlook.exe")
+		time.Sleep(1 * time.Second)
+
+		osppPath := filepath.Join(officePath, "ospp.vbs")
+
+		for _, unpkey := range info.UnPKeys {
+			a.emitLogAtivacao("office", fmt.Sprintf("--> Desinstalando chave do produto existente (%s)...", unpkey))
+			output, err := syscmd.RunCommand(officePath, "cscript", osppPath, "/unpkey:"+unpkey)
+			if err != nil {
+				a.emitLogAtivacao("office", fmt.Sprintf("Aviso: Falha ao desinstalar chave %s (pode não existir): %v - %s", unpkey, err, output))
+			} else {
+				a.emitLogAtivacao("office", output)
+			}
+		}
+
+		if len(info.LicensePatterns) > 0 {
+			licensesDirCandidates := []string{
+				filepath.Join(officePath, "..", "root", "Licenses16"),
+				filepath.Join(officePath, "..", "root", "Licenses15"),
+			}
+			foundLicensesDir := ""
+			for _, dir := range licensesDirCandidates {
+				if _, err := os.Stat(dir); err == nil {
+					foundLicensesDir = dir
+					break
+				}
+			}
+
+			if foundLicensesDir == "" {
+				a.emitLogAtivacao("office", "Aviso: Diretório de licenças KMS não encontrado. Pulando instalação de licenças.")
+			} else {
+				files, err := os.ReadDir(foundLicensesDir)
+				if err != nil {
+					a.emitLogAtivacao("office", fmt.Sprintf("Erro ao ler diretório de licenças %s: %v", foundLicensesDir, err))
+				} else {
+					for _, pattern := range info.LicensePatterns {
+						re := regexp.MustCompile(pattern)
+						for _, file := range files {
+							if !file.IsDir() && re.MatchString(file.Name()) {
+								licensePath := filepath.Join(foundLicensesDir, file.Name())
+								a.emitLogAtivacao("office", fmt.Sprintf("--> Instalando licença KMS: %s", file.Name()))
+								output, err := syscmd.RunCommand(officePath, "cscript", osppPath, "/inslic:"+licensePath)
+								a.emitLogAtivacao("office", output)
+								if err != nil {
+									a.emitLogAtivacao("office", fmt.Sprintf("--- FALHA AO INSTALAR LICENÇA %s ---", file.Name()))
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		a.emitLogAtivacao("office", fmt.Sprintf("--> Instalando chave do produto GVLK (%s)...", info.ProdKey))
+		output, err := syscmd.RunCommand(officePath, "cscript", osppPath, "/inpkey:"+info.ProdKey)
 		a.emitLogAtivacao("office", output)
 		if err != nil {
-			a.emitLogAtivacao("office", "--- FALHA AO INSTALAR CHAVE ---")
+			a.emitLogAtivacao("office", "--- FALHA AO INSTALAR CHAVE DO PRODUTO GVLK ---")
+			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO ---")
 			return
 		}
-		a.emitLogAtivacao("office", "--> Definindo servidor KMS: kms.msguides.com...")
-		output, _ = syscmd.RunCommand(officePath, "cscript", "ospp.vbs", "/sethst:kms.msguides.com")
+
+		a.emitLogAtivacao("office", "--> Definindo porta KMS: 1688 (padrão)...")
+		output, err = syscmd.RunCommand(officePath, "cscript", osppPath, "/setprt:1688")
 		a.emitLogAtivacao("office", output)
-		a.emitLogAtivacao("office", "--> Tentando ativar...")
-		output, err = syscmd.RunCommand(officePath, "cscript", "ospp.vbs", "/act")
-		a.emitLogAtivacao("office", output)
-		if err == nil {
-			a.emitLogAtivacao("office", "--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---")
-		} else {
-			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO ---")
+
+		activationSuccessful := false
+		for _, server := range info.KMS_Servers {
+			a.emitLogAtivacao("office", fmt.Sprintf("--> Definindo servidor KMS: %s...", server))
+			output, err = syscmd.RunCommand(officePath, "cscript", osppPath, "/sethst:"+server)
+			a.emitLogAtivacao("office", output)
+			if err != nil {
+				a.emitLogAtivacao("office", fmt.Sprintf("Aviso: Falha ao definir servidor %s: %v", server, err))
+				continue
+			}
+
+			a.emitLogAtivacao("office", fmt.Sprintf("--> Tentando ativar com %s...", server))
+			output, err = syscmd.RunCommand(officePath, "cscript", osppPath, "/act")
+			a.emitLogAtivacao("office", output)
+
+			if err == nil && (strings.Contains(output, "Product activation successful") || strings.Contains(output, "activated successfully") || strings.Contains(output, "licença ativa")) {
+				a.emitLogAtivacao("office", "--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---")
+				activationSuccessful = true
+				break
+			} else {
+				a.emitLogAtivacao("office", fmt.Sprintf("--- FALHA NA ATIVAÇÃO COM %s (tentando o próximo, se houver) ---", server))
+				if err != nil {
+					a.emitLogAtivacao("office", fmt.Sprintf("Detalhes do erro: %v", err))
+				}
+			}
+		}
+
+		if !activationSuccessful {
+			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO: NENHUM SERVIDOR KMS CONSEGUIU ATIVAR ---")
 		}
 	}()
 }
 
-func findOfficePath() (string, error) {
+func findOfficePathGo() (string, error) {
 	programFiles := os.Getenv("ProgramFiles")
 	programFilesX86 := os.Getenv("ProgramFiles(x86)")
-	possiblePaths := []string{
-		filepath.Join(programFiles, "Microsoft Office", "Office16"),
-		filepath.Join(programFilesX86, "Microsoft Office", "Office16"),
-		filepath.Join(programFiles, "Microsoft Office", "Office15"),
-		filepath.Join(programFilesX86, "Microsoft Office", "Office15"),
+
+	basePaths := []string{
+		filepath.Join(programFiles, "Microsoft Office"),
+		filepath.Join(programFilesX86, "Microsoft Office"),
 	}
-	for _, path := range possiblePaths {
-		if _, err := os.Stat(filepath.Join(path, "ospp.vbs")); err == nil {
-			return path, nil
+
+	versionFolders := []string{"Office16", "Office15"}
+
+	for _, basePath := range basePaths {
+		for _, versionFolder := range versionFolders {
+			fullPath := filepath.Join(basePath, versionFolder)
+			if _, err := os.Stat(filepath.Join(fullPath, "ospp.vbs")); err == nil {
+				return fullPath, nil
+			}
 		}
 	}
-	return "", errors.New("a pasta de instalação do Office não foi encontrada")
+	return "", errors.New("a pasta de instalação do Office (com ospp.vbs) não foi encontrada")
 }
 
 func (a *App) ExecutarComandoSimples(titulo string, comando string, args ...string) {

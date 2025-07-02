@@ -6,7 +6,7 @@
 
   export let titulo: string;
   export let descricao: string;
-  export let textoBotao: string = "Executar"; // Texto padrão do botão
+  export let textoBotao: string = "Executar";
   export let logLines: string[] = [];
   export let emExecucao: boolean = false;
 

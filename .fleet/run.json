@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "command",
+            "name": "Executar Wails Dev (PowerShell)",
+            "program": "powershell.exe",
+            "args": ["-Command", "wails dev"],
+        }
+    ]
+}
