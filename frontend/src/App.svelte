@@ -16,10 +16,7 @@
     },
     {
       nome: "Ativação",
-      funcionalidades: [
-        "Office - Ativação 180 dias",
-        "Windows - Ativação 180 dias",
-      ],
+      funcionalidades: ["Office - Ativação", "Windows - Ativação"],
     },
     {
       nome: "Manutenção e Limpeza",
@@ -103,7 +100,7 @@
   }
 
   function handleKeyDown(event) {
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (event.key === "Enter" || event.key === " ") {
       menuAberto = !menuAberto;
     }
   }
@@ -121,7 +118,6 @@
     <div class="hamburger-bar"></div>
     <div class="hamburger-bar"></div>
     <div class="hamburger-bar"></div>
-    
   </div>
 
   {#if menuAberto}

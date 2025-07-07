@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
-  import { EventsOn, EventsOff } from '../../../wailsjs/runtime';
-  import { AtivarOffice } from '../../../wailsjs/go/main/App';
+  import { onMount, createEventDispatcher } from "svelte";
+  import { EventsOn, EventsOff } from "../../../wailsjs/runtime";
+  import { AtivarOffice } from "../../../wailsjs/go/main/App";
 
-  import FeatureRunner from './FeatureRunner.svelte';
+  import FeatureRunner from "./FeatureRunner.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -33,22 +33,28 @@
   onMount(() => {
     const eventName = "log:ativacao:office";
     EventsOn(eventName, adicionarLog);
-    return () => { EventsOff(eventName) };
+    return () => {
+      EventsOff(eventName);
+    };
   });
 </script>
 
 <FeatureRunner
-  titulo="Ativação do Office (180 Dias)"
-  descricao="Esta função fechará todos os aplicativos do Office (Word, Excel, etc.) e tentará a ativação via KMS."
+  titulo="Ativação do Office"
+  descricao="Esta função fechará todos os aplicativos do Office (Word, Excel, etc.) e realizará a ativação utilizando servidores KMS públicos. Requer privilégios de Administrador."
   textoBotao="Iniciar Ativação do Office"
   bind:logLines
   bind:emExecucao
   on:start={iniciar}
-  on:voltar={() => dispatch('voltar')}
+  on:voltar={() => dispatch("voltar")}
 >
   <div class="config-section">
     <label for="versao-office">Selecione a versão do Office:</label>
-    <select id="versao-office" bind:value={versaoSelecionada} disabled={emExecucao}>
+    <select
+      id="versao-office"
+      bind:value={versaoSelecionada}
+      disabled={emExecucao}
+    >
       <option value="2024">Office 2024</option>
       <option value="2021">Office 2021</option>
       <option value="2016">Office 2016</option>

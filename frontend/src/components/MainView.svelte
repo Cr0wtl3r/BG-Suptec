@@ -18,9 +18,9 @@
 
 {#if visao === "Painel de Informações"}
   <p>Erro: Visão do Painel deveria ser tratada pelo App.svelte</p>
-{:else if visao === "Windows - Ativação 180 dias"}
+{:else if visao === "Windows - Ativação"}
   <AtivacaoWindows on:voltar={handleVoltar} />
-{:else if visao === "Office - Ativação 180 dias"}
+{:else if visao === "Office - Ativação"}
   <AtivacaoOffice on:voltar={handleVoltar} />
 {:else if visao === "Limpa cache DNS"}
   <LimpaCacheDNS on:voltar={handleVoltar} />

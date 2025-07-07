@@ -37,7 +37,7 @@
 </script>
 
 <FeatureRunner
-  titulo="Ativação do Windows (180 Dias)"
+  titulo="Ativação do Windows"
   descricao="Esta função tentará ativar sua versão do Windows usando servidores KMS públicos. Requer privilégios de Administrador."
   textoBotao="Iniciar Ativação do Windows"
   bind:logLines
