@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { ExecutarComando } from '../../../wailsjs/go/main/App';
-  import FeatureRunner from './FeatureRunner.svelte';
+  import { createEventDispatcher } from "svelte";
+  import { ExecutarComando } from "../../../wailsjs/go/main/App";
+  import FeatureRunner from "./FeatureRunner.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -18,7 +18,7 @@
       adicionarLog("Resultado: " + resultStop);
 
       adicionarLog("Aguardando 3 segundos antes de reiniciar...");
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       adicionarLog("Reiniciando o serviço Spooler...");
       const resultStart = await ExecutarComando("net", ["start", "spooler"]);
@@ -48,5 +48,5 @@
   bind:logLines
   bind:emExecucao
   on:start={iniciar}
-  on:voltar={() => dispatch('voltar')}
+  on:voltar={() => dispatch("voltar")}
 />

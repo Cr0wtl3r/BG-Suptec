@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { ExecutarComando } from '../../../wailsjs/go/main/App';
-  import FeatureRunner from './FeatureRunner.svelte';
+  import { createEventDispatcher } from "svelte";
+  import { ExecutarComando } from "../../../wailsjs/go/main/App";
+  import FeatureRunner from "./FeatureRunner.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -35,10 +35,10 @@
 
 <FeatureRunner
   titulo="Limpar Cache DNS"
-  descricao='Executa o comando "ipconfig /flushdns" para limpar o cache de resolução de DNS local.'
+  descricao="Executa o comando 'ipconfig /flushdns' para limpar o cache de resolução de DNS local."
   textoBotao="Executar Limpeza"
   bind:logLines
   bind:emExecucao
   on:start={iniciar}
-  on:voltar={() => dispatch('voltar')}
+  on:voltar={() => dispatch("voltar")}
 />

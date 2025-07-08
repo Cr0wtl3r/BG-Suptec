@@ -13,9 +13,9 @@
     width: 100%;
     max-width: 800px;
     padding: 25px;
-    background-color: rgba(25, 28, 89, 0.4);
+    background-color: rgba(15, 17, 68, 0.351);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(240, 240, 240, 0.3);
+    border: 1px solid rgba(240, 240, 240, 0.348);
     border-radius: 12px;
     color: var(--text-light);
     animation: fadeIn 0.5s ease-out;

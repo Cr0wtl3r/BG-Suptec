@@ -8,11 +8,11 @@ html, body {
 }
 
 :root {
-  --bg-dark: #0a0d4d;
-  --bg-medium: #191C59;
-  --bg-light: #163E73;
-  --accent-blue: #0378A6;
-  --accent-orange: #F2762E;
+  --bg-dark: #0d1043d7;
+  --bg-medium: #12155c;
+  --bg-light: #010b1861;
+  --accent-blue: #1157736d;
+  --accent-orange: #ed5f0c;
   --text-light: #F0F0F0;
 }
 

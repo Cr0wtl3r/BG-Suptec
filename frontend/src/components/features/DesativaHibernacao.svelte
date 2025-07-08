@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { ExecutarComando } from '../../../wailsjs/go/main/App';
-  import FeatureRunner from './FeatureRunner.svelte';
+  import { createEventDispatcher } from "svelte";
+  import { ExecutarComando } from "../../../wailsjs/go/main/App";
+  import FeatureRunner from "./FeatureRunner.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -17,7 +17,9 @@
       const resultado = await ExecutarComando("powercfg", ["-h", "off"]);
       adicionarLog("Resultado: " + resultado);
       adicionarLog("Hibernação desativada com sucesso!");
-      adicionarLog("O arquivo hiberfil.sys foi removido, liberando espaço em disco.");
+      adicionarLog(
+        "O arquivo hiberfil.sys foi removido, liberando espaço em disco.",
+      );
       adicionarLog("--- Operação concluída ---");
     } catch (err) {
       adicionarLog(`ERRO: ${err}`);
@@ -41,5 +43,5 @@
   bind:logLines
   bind:emExecucao
   on:start={iniciar}
-  on:voltar={() => dispatch('voltar')}
+  on:voltar={() => dispatch("voltar")}
 />

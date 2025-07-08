@@ -59,7 +59,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.53);
     z-index: 40;
   }
   .sidebar {
@@ -69,10 +69,10 @@
     width: 350px;
     height: 100vh;
     z-index: 50;
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.553);
     transform: translateX(100%);
     animation: slideIn 0.3s forwards ease-out;
-    background-color: rgba(25, 28, 89, 0.85);
+    background-color: rgba(9, 11, 55, 0.656);
     backdrop-filter: blur(10px);
     border-left: 1px solid rgba(240, 240, 240, 0.2);
   }

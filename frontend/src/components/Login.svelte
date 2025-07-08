@@ -56,16 +56,16 @@
   .login-box {
     position: relative;
     z-index: 2;
-    background-color: rgba(25, 28, 89, 0.2);
+    background-color: rgba(12, 16, 85, 0.337);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(240, 240, 240, 0.301);
+    border: 1px solid rgba(240, 240, 240, 0.395);
     padding: 40px;
     border-radius: 12px;
     color: var(--text-light);
     text-align: center;
     width: 90%;
     max-width: 400px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.726);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.808);
   }
   .profile-pic {
     width: 100px;
@@ -87,7 +87,7 @@
     flex-grow: 1;
     padding: 12px;
     border: 1px solid transparent;
-    background-color: rgba(22, 62, 115, 0.5);
+    background-color: rgba(22, 62, 115, 0.548);
     color: var(--text-light);
     border-radius: 4px 0 0 4px;
     font-size: 16px;

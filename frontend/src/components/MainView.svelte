@@ -37,18 +37,3 @@
     on:voltar={handleVoltar}
   />
 {/if}
-
-<style>
-  .main-app {
-    position: relative;
-    z-index: 2;
-    color: var(--text-light);
-    font-size: 1.5rem;
-    text-align: center;
-    background-color: rgba(25, 28, 89, 0.2);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(240, 240, 240, 0.301);
-    padding: 40px;
-    border-radius: 12px;
-  }
-</style>

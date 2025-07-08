@@ -22,7 +22,7 @@
 
 <style>
   .log-panel {
-    background-color: rgba(4, 7, 53, 0.534);
+    background-color: rgba(4, 7, 53, 0.499);
     border-radius: 8px;
     margin-top: 20px;
     padding: 15px;
