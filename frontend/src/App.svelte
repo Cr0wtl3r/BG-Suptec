@@ -106,8 +106,8 @@
 </script>
 
 <main
-  class="relative w-screen min-h-screen flex flex-col justify-center items-center bg-dark-blue-bg text-text-light **overflow-x-hidden**"
-  style="background-image: url('/background.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-attachment: fixed;;"
+  class="relative w-screen min-h-screen flex flex-col justify-center items-center bg-dark-blue-bg text-text-light overflow-x-hidden"
+  style="background-image: url('/background.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-attachment: fixed;"
 >
   <div class="absolute inset-0 bg-black bg-opacity-40"></div>
 

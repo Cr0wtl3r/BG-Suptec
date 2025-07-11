@@ -26,7 +26,7 @@
 ></div>
 
 <aside
-  class="fixed top-0 right-0 w-80 h-screen z-50 shadow-xl transform translate-x-full animate-slideIn bg-dark-blue-light bg-opacity-80 backdrop-blur-md border-l border-gray-700 overflow-y-auto"
+  class="fixed top-0 right-0 w-80 h-screen z-50 shadow-xl transform translate-x-full animate-slideIn bg-dark-blue-light bg-opacity-35 backdrop-blur-md border-l border-gray-700 overflow-y-auto"
 >
   <div class="p-5">
     <h2 class="text-center text-accent-orange text-2xl font-bold mb-8">

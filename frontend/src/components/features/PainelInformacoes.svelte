@@ -70,11 +70,31 @@
   let isInfoDNSOpen = false;
 
   let termoBusca = "";
-  $: funcionalidadesFiltradas = modulos
+
+  const itensPorPagina = 12;
+  let paginaAtual = 1;
+
+  $: todasFuncionalidades = modulos
     .flatMap((m) => m.funcionalidades)
     .filter((f) => f !== "Painel de Informações")
-    .sort((a, b) => a.localeCompare(b))
-    .filter((f) => f.toLowerCase().includes(termoBusca.toLowerCase()));
+    .sort((a, b) => a.localeCompare(b));
+
+  $: funcionalidadesFiltradas = todasFuncionalidades.filter((f) =>
+    f.toLowerCase().includes(termoBusca.toLowerCase()),
+  );
+
+  $: totalPaginas = Math.ceil(funcionalidadesFiltradas.length / itensPorPagina);
+
+  $: funcionalidadesPaginadas = funcionalidadesFiltradas.slice(
+    (paginaAtual - 1) * itensPorPagina,
+    paginaAtual * itensPorPagina,
+  );
+
+  $: {
+    if (termoBusca !== undefined) {
+      paginaAtual = 1;
+    }
+  }
 
   onMount(() => {
     carregarInformacoes();
@@ -261,12 +281,14 @@
 </script>
 
 <div
-  class="w-full max-w-7xl h-full p-6 box-border bg-primary-purple bg-opacity-10 backdrop-blur-md border border-gray-700 rounded-xl animate-fadeIn flex flex-col md:flex-row gap-4"
+  class="w-full md:max-w-7xl h-full p-5 box-border bg-primary-purple bg-opacity-10 backdrop-blur-md border border-gray-700 rounded-xl animate-fadeIn flex flex-col md:flex-row gap-5 overflow-hidden"
 >
   <div
-    class="flex-none w-full md:w-96 p-5 rounded-lg bg-dark-blue-light bg-opacity-30"
+    class="flex-none w-full md:w-96 p-5 rounded-lg overflow-y-auto bg-dark-blue-light bg-opacity-25"
   >
-    <h2 class="text-2xl font-bold text-accent-orange mb-4">
+    <h2
+      class="text-2xl font-bold text-center text-accent-orange mb-4 bg-opacity-35"
+    >
       Painel de Informações
     </h2>
     {#if erro}
@@ -283,7 +305,7 @@
             <div
               class="bg-dark-blue-bg p-3 rounded-md border-l-4 border-primary-purple"
             >
-              <span class="block text-xs opacity-70 uppercase mb-1"
+              <span class="block text-xs text-center opacity-70 uppercase mb-1"
                 >Computador</span
               >
               <div class="flex items-start gap-2 min-h-6 w-full relative">
@@ -299,7 +321,7 @@
                       <button
                         on:click={salvarNomeComputador}
                         disabled={salvandoNome}
-                        class="p-1 px-1.5 border-none rounded-md cursor-pointer text-sm min-w-6 h-6 flex items-center justify-center flex-shrink-0 bg- text-white bg-dark-blue-light hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                        class="p-1 px-1.5 border-none rounded-md cursor-pointer text-sm min-w-6 h-6 flex items-center justify-center flex-shrink-0 bg-dark-blue-light text-white hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed"
                         >{salvandoNome ? "..." : "✓"}</button
                       >
                       <button
@@ -341,7 +363,7 @@
             </div>
 
             <div
-              class="bg-dark-blue-bg p-3 rounded-md border-l-4 border-primary-purple"
+              class="bg-dark-blue-bg p-3 rounded-md border-l-4 text-center border-primary-purple"
             >
               <span class="block text-xs opacity-70 uppercase mb-1">RAM</span>
               <span class="text-sm font-semibold break-all leading-snug"
@@ -349,7 +371,7 @@
               >
             </div>
             <div
-              class="bg-dark-blue-bg p-3 rounded-md border-l-4 border-primary-purple col-span-1"
+              class="bg-dark-blue-bg p-3 rounded-md border-l-4 text-center border-primary-purple col-span-1"
             >
               <span class="block text-xs opacity-70 uppercase mb-1"
                 >Windows</span
@@ -359,7 +381,7 @@
               >
             </div>
             <div
-              class="bg-dark-blue-bg p-3 rounded-md border-l-4 border-primary-purple col-span-1"
+              class="bg-dark-blue-bg p-3 rounded-md text-center border-l-4 border-primary-purple col-span-1"
             >
               <span class="block text-xs opacity-70 uppercase mb-1"
                 >Processador</span
@@ -369,7 +391,7 @@
               >
             </div>
             <div
-              class="bg-dark-blue-bg p-3 rounded-md border-l-4 border-primary-purple"
+              class="bg-dark-blue-bg p-3 text-center rounded-md border-l-4 border-primary-purple"
             >
               <span class="block text-xs opacity-70 uppercase mb-1">MAC</span>
               <span class="text-sm font-semibold break-all leading-snug"
@@ -385,7 +407,7 @@
         >
           <div class="grid grid-cols-1 gap-3">
             <div
-              class="bg-dark-blue-bg p-3 rounded-md border-l-4 border-primary-purple col-span-1"
+              class="bg-dark-blue-bg text-center p-3 rounded-md border-l-4 border-primary-purple col-span-1"
             >
               <span class="block text-xs opacity-70 uppercase mb-1"
                 >Rede IPv4</span
@@ -466,7 +488,7 @@
         <Accordion title="Configurações de DNS" bind:isOpen={isInfoDNSOpen}>
           <div class="grid grid-cols-1 gap-3">
             <div
-              class="bg-dark-blue-bg p-3 rounded-md border-l-4 border-primary-purple col-span-1"
+              class="bg-dark-blue-bg p-3 rounded-md border-l-4 text-center border-primary-purple col-span-1"
             >
               <span class="block text-xs opacity-70 uppercase mb-1">DNS</span>
               <div class="flex items-start gap-2 min-h-6 w-full relative">
@@ -545,7 +567,7 @@
   </div>
 
   <div class="flex-grow flex flex-col min-w-0">
-    <h3 class="text-xl font-bold text-accent-orange mb-4">
+    <h3 class="text-xl font-bold text-accent-orange mb-5">
       Todas as Ferramentas ({funcionalidadesFiltradas.length})
     </h3>
     <input
@@ -556,22 +578,49 @@
       bind:this={campoBuscaElement}
     />
     <div
-      class="flex-grow overflow-y-auto pr-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 content-start"
+      class="flex-grow overflow-y-auto pr-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pb-3 content-start"
     >
-      {#each funcionalidadesFiltradas as funcionalidade (funcionalidade)}
+      {#each funcionalidadesPaginadas as funcionalidade (funcionalidade)}
         <button
-          class="p-4 border border-dark-blue-bg bg-dark-blue-light text-text-light rounded-lg cursor-pointer text-sm font-bold text-left transition-all duration-200 hover:bg-primary-purple hover:translate-y-px hover:border-accent-orange"
+          class="p-4 border bg-opacity-50 text-center border-dark-blue-bg bg-dark-blue-light text-text-light rounded-lg cursor-pointer text-sm font-bold transition-all duration-200 hover:bg-primary-purple hover:translate-y-px hover:border-accent-orange"
           on:click={() => navegarPara(funcionalidade)}
         >
           {funcionalidade}
         </button>
       {/each}
-      {#if funcionalidadesFiltradas.length === 0}
+      {#if funcionalidadesPaginadas.length === 0 && funcionalidadesFiltradas.length > 0}
+        <p class="opacity-80 text-center col-span-full">
+          Nenhuma ferramenta encontrada nesta página.
+        </p>
+      {:else if funcionalidadesFiltradas.length === 0}
         <p class="opacity-80 text-center col-span-full">
           Nenhuma ferramenta encontrada.
         </p>
       {/if}
     </div>
+
+    {#if totalPaginas > 1}
+      <div class="flex justify-center items-center gap-2 mt-4 flex-shrink-0">
+        <button
+          class="px-3 py-1 bg-primary-purple text-white rounded-md cursor-pointer hover:bg-primary-purple-dark disabled:opacity-50 disabled:cursor-not-allowed"
+          on:click={() => (paginaAtual = Math.max(1, paginaAtual - 1))}
+          disabled={paginaAtual === 1}
+        >
+          Anterior
+        </button>
+        <span class="text-text-light text-sm"
+          >Página {paginaAtual} de {totalPaginas}</span
+        >
+        <button
+          class="px-3 py-1 bg-primary-purple text-white rounded-md cursor-pointer hover:bg-primary-purple-dark disabled:opacity-50 disabled:cursor-not-allowed"
+          on:click={() =>
+            (paginaAtual = Math.min(totalPaginas, paginaAtual + 1))}
+          disabled={paginaAtual === totalPaginas}
+        >
+          Próxima
+        </button>
+      </div>
+    {/if}
   </div>
 </div>
 

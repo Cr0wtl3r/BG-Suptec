@@ -16,8 +16,8 @@ func main() {
 
 	err := wails.Run(&options.App{
 		Title:         "BG-SupTec",
-		Width:         1280,
-		Height:        800,
+		Width:         1160,
+		Height:        700,
 		MinWidth:  700,
 		MinHeight: 555,
 		AssetServer: &assetserver.Options{
