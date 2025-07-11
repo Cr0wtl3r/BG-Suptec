@@ -14,12 +14,12 @@
 </script>
 
 <FeatureContainer {titulo}>
-  <p>{descricao}</p>
+  <p class="mt-0 mb-6 opacity-90">{descricao}</p>
 
   <slot></slot>
 
   <button
-    class="btn-executar"
+    class="w-full p-4 text-xl font-bold cursor-pointer bg-accent-orange text-dark-blue-bg border-none rounded-lg transition-all duration-200 hover:brightness-110 disabled:bg-gray-600 disabled:cursor-not-allowed"
     on:click={() => dispatch("start")}
     disabled={emExecucao}
   >
@@ -30,11 +30,3 @@
 
   <BotaoVoltar on:click={() => dispatch("voltar")} />
 </FeatureContainer>
-
-<style>
-  p {
-    margin-top: 0;
-    margin-bottom: 25px;
-    opacity: 0.9;
-  }
-</style>

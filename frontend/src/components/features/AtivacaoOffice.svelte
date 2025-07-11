@@ -48,12 +48,15 @@
   on:start={iniciar}
   on:voltar={() => dispatch("voltar")}
 >
-  <div class="config-section">
-    <label for="versao-office">Selecione a versão do Office:</label>
+  <div class="mb-6">
+    <label for="versao-office" class="font-bold text-text-light mb-2 block"
+      >Selecione a versão do Office:</label
+    >
     <select
       id="versao-office"
       bind:value={versaoSelecionada}
       disabled={emExecucao}
+      class="w-full p-3 bg-dark-blue-light text-text-light border border-primary-purple rounded-md text-base focus:outline-none focus:ring-1 focus:ring-primary-purple disabled:opacity-60 disabled:cursor-not-allowed"
     >
       <option value="2024">Office 2024</option>
       <option value="2021">Office 2021</option>
@@ -61,9 +64,3 @@
     </select>
   </div>
 </FeatureRunner>
-
-<style>
-  .config-section {
-    margin-bottom: 25px;
-  }
-</style>

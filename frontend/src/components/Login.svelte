@@ -31,90 +31,32 @@
   }
 </script>
 
-<div class="login-box">
-  <img src="/profile.png" alt="Imagem de Perfil" class="profile-pic" />
-  <h1>Caixa de Ferramentas</h1>
-  <p class="subtitle">Por favor, insira a senha para continuar.</p>
-  <div class="input-group">
+<div
+  class="relative z-20 bg-dark-blue-light bg-opacity-70 backdrop-blur-md border border-gray-700 p-10 rounded-xl text-text-light text-center w-11/12 max-w-md shadow-2xl **mt-auto mb-auto**"
+>
+  <img
+    src="/profile.png"
+    alt="Imagem de Perfil"
+    class="w-24 h-24 rounded-full object-cover border-4 border-accent-orange mb-5 mx-auto bg-dark-blue-bg"
+  />
+  <h1 class="text-3xl font-bold mb-2">Caixa de Ferramentas</h1>
+  <p class="opacity-80 mb-5">Por favor, insira a senha para continuar.</p>
+  <div class="flex mt-5">
     <input
       id="senha"
       type="password"
-      class="input"
+      class="flex-grow p-3 border border-transparent bg-dark-blue-bg bg-opacity-60 text-text-light rounded-l-md text-base focus:outline-none focus:border-primary-purple focus:ring-2 focus:ring-primary-purple"
       bind:value={senha}
       autocomplete="current-password"
       on:keydown={handleKeydown}
       placeholder="Senha"
     />
-    <button class="btn" on:click={fazerLogin}>Entrar</button>
+    <button
+      class="px-5 py-2 border-none bg-accent-orange text-dark-blue-bg cursor-pointer rounded-r-md font-bold text-base transition-all duration-200 hover:brightness-110"
+      on:click={fazerLogin}>Entrar</button
+    >
   </div>
   {#if mensagemErro}
-    <p class="error">{mensagemErro}</p>
+    <p class="text-accent-orange mt-4 font-bold min-h-[20px]">{mensagemErro}</p>
   {/if}
 </div>
-
-<style>
-  .login-box {
-    position: relative;
-    z-index: 2;
-    background-color: rgba(12, 16, 85, 0.337);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(240, 240, 240, 0.395);
-    padding: 40px;
-    border-radius: 12px;
-    color: var(--text-light);
-    text-align: center;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.808);
-  }
-  .profile-pic {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid var(--accent-orange);
-    margin-bottom: 20px;
-    background-color: var(--bg-light);
-  }
-  .subtitle {
-    opacity: 0.8;
-  }
-  .input-group {
-    display: flex;
-    margin-top: 20px;
-  }
-  .input {
-    flex-grow: 1;
-    padding: 12px;
-    border: 1px solid transparent;
-    background-color: rgba(22, 62, 115, 0.548);
-    color: var(--text-light);
-    border-radius: 4px 0 0 4px;
-    font-size: 16px;
-  }
-  .input:focus {
-    outline: none;
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 5px var(--accent-blue);
-  }
-  .btn {
-    padding: 10px 20px;
-    border: none;
-    background-color: var(--accent-orange);
-    color: var(--text-light);
-    cursor: pointer;
-    border-radius: 0 4px 4px 0;
-    font-weight: bold;
-    font-size: 16px;
-    transition: filter 0.2s;
-  }
-  .btn:hover {
-    filter: brightness(1.1);
-  }
-  .error {
-    color: var(--accent-orange);
-    margin-top: 15px;
-    font-weight: bold;
-    min-height: 20px;
-  }
-</style>

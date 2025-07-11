@@ -1,53 +1,26 @@
-html, body {
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-purple:#201f1f70;
+  --primary-purple-dark:#171958af;
+}
+
+
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: var(--text-light);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-:root {
-  --bg-dark: #0d1043d7;
-  --bg-medium: #12155c;
-  --bg-light: #010b1861;
-  --accent-blue: #1157736d;
-  --accent-orange: #ed5f0c;
-  --text-light: #F0F0F0;
+main{
+  padding: 1rem;
 }
 
 label {
   font-weight: bold;
-}
-
-select {
-  width: 100%;
-  padding: 12px;
-  background-color: var(--bg-light);
-  color: var(--text-light);
-  border: 1px solid var(--accent-blue);
-  border-radius: 6px;
-  font-size: 1rem;
-}
-
-.btn-executar {
-  width: 100%;
-  padding: 15px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  cursor: pointer;
-  background-color: var(--accent-orange);
-  color: var(--text-light);
-  border: none;
-  border-radius: 8px;
-  transition: filter 0.2s, background-color 0.2s;
-}
-
-.btn-executar:hover:not(:disabled) {
-  filter: brightness(1.1);
-}
-
-.btn-executar:disabled {
-  background-color: #585b70;
-  cursor: not-allowed;
 }

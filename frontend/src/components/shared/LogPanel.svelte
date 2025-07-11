@@ -16,27 +16,12 @@
   }
 </script>
 
-<div class="log-panel" use:autoscroll={logLines}>
-  <pre>{logLines.join("\n")}</pre>
+<div
+  class="bg-dark-blue-bg bg-opacity-50 rounded-lg mt-5 p-4 h-72 overflow-y-auto text-sm border border-gray-700 scroll-smooth"
+  use:autoscroll={logLines}
+>
+  <pre
+    class="m-0 whitespace-pre-wrap break-words font-mono text-text-light">{logLines.join(
+      "\n",
+    )}</pre>
 </div>
-
-<style>
-  .log-panel {
-    background-color: rgba(4, 7, 53, 0.499);
-    border-radius: 8px;
-    margin-top: 20px;
-    padding: 15px;
-    height: 300px;
-    overflow-y: auto;
-    font-family: "Courier New", Courier, monospace;
-    font-size: 0.9rem;
-    border: 1px solid var(--bg-light);
-    scroll-behavior: smooth;
-  }
-
-  pre {
-    margin: 0;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
-</style>

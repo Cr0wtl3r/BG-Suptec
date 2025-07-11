@@ -45,12 +45,15 @@
   on:start={iniciar}
   on:voltar
 >
-  <div class="config-section">
-    <label for="versao-windows">Selecione a versão do Windows:</label>
+  <div class="mb-6">
+    <label for="versao-windows" class="font-bold text-text-light mb-2 block"
+      >Selecione a versão do Windows:</label
+    >
     <select
       id="versao-windows"
       bind:value={versaoSelecionada}
       disabled={emExecucao}
+      class="w-full p-3 bg-dark-blue-light text-text-light border border-primary-purple rounded-md text-base focus:outline-none focus:ring-1 focus:ring-primary-purple disabled:opacity-60 disabled:cursor-not-allowed"
     >
       <option value="pro">Windows 10/11 Pro</option>
       <option value="home">Windows 10/11 Home</option>
@@ -59,9 +62,3 @@
     </select>
   </div>
 </FeatureRunner>
-
-<style>
-  .config-section {
-    margin-bottom: 25px;
-  }
-</style>

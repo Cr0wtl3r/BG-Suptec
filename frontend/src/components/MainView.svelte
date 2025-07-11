@@ -16,24 +16,28 @@
   }
 </script>
 
-{#if visao === "Painel de Informações"}
-  <p>Erro: Visão do Painel deveria ser tratada pelo App.svelte</p>
-{:else if visao === "Windows - Ativação"}
-  <AtivacaoWindows on:voltar={handleVoltar} />
-{:else if visao === "Office - Ativação"}
-  <AtivacaoOffice on:voltar={handleVoltar} />
-{:else if visao === "Limpa cache DNS"}
-  <LimpaCacheDNS on:voltar={handleVoltar} />
-{:else if visao === "Desativa a Hibernação do Windows"}
-  <DesativaHibernacao on:voltar={handleVoltar} />
-{:else if visao === "Limpa e Reinicia Spool de Impressão"}
-  <LimpaSpoolImpressao on:voltar={handleVoltar} />
-{:else}
-  <FeatureRunner
-    titulo={visao}
-    descricao="Esta funcionalidade ainda está em desenvolvimento."
-    textoBotao="Indisponível"
-    emExecucao={true}
-    on:voltar={handleVoltar}
-  />
-{/if}
+<div
+  class="flex flex-col flex-grow items-center justify-center p-5 w-full h-full"
+>
+  {#if visao === "Painel de Informações"}
+    <p>Erro: Visão do Painel deveria ser tratada pelo App.svelte</p>
+  {:else if visao === "Windows - Ativação"}
+    <AtivacaoWindows on:voltar={handleVoltar} />
+  {:else if visao === "Office - Ativação"}
+    <AtivacaoOffice on:voltar={handleVoltar} />
+  {:else if visao === "Limpa cache DNS"}
+    <LimpaCacheDNS on:voltar={handleVoltar} />
+  {:else if visao === "Desativa a Hibernação do Windows"}
+    <DesativaHibernacao on:voltar={handleVoltar} />
+  {:else if visao === "Limpa e Reinicia Spool de Impressao"}
+    <LimpaSpoolImpressao on:voltar={handleVoltar} />
+  {:else}
+    <FeatureRunner
+      titulo={visao}
+      descricao="Esta funcionalidade ainda está em desenvolvimento."
+      textoBotao="Indisponível"
+      emExecucao={true}
+      on:voltar={handleVoltar}
+    />
+  {/if}
+</div>

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import "./app.css";
   import Login from "./components/Login.svelte";
   import Sidebar from "./components/Sidebar.svelte";
   import MainView from "./components/MainView.svelte";
@@ -94,31 +93,41 @@
     },
   ];
 
-  function handleNavigate(event) {
+  function handleNavigate(event: CustomEvent) {
     visaoAtual = event.detail;
     menuAberto = false;
   }
 
-  function handleKeyDown(event) {
+  function handleKeyDown(event: KeyboardEvent) {
     if (event.key === "Enter" || event.key === " ") {
       menuAberto = !menuAberto;
     }
   }
 </script>
 
-<main class="container">
-  <div
-    class="hamburger-menu"
+<main
+  class="relative w-screen min-h-screen flex flex-col justify-center items-center bg-dark-blue-bg text-text-light **overflow-x-hidden**"
+  style="background-image: url('/background.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-attachment: fixed;;"
+>
+  <div class="absolute inset-0 bg-black bg-opacity-40"></div>
+
+  <button
+    class="absolute top-5 right-5 p-2 z-50 flex flex-col justify-between w-8 h-8 bg-transparent border-none outline-none cursor-pointer hover:opacity-80 focus:outline-2 focus:outline-white focus:outline-offset-2 gap-1.5"
     on:click={() => (menuAberto = !menuAberto)}
     on:keydown={handleKeyDown}
-    role="button"
     tabindex="0"
     aria-label="Abrir menu"
   >
-    <div class="hamburger-bar"></div>
-    <div class="hamburger-bar"></div>
-    <div class="hamburger-bar"></div>
-  </div>
+    <div
+      class="w-full h-0.5 bg-white rounded transition-all duration-300"
+    ></div>
+    <div
+      class="w-full h-0.5 bg-white rounded transition-all duration-300"
+    ></div>
+    <div
+      class="w-full h-0.5 bg-white rounded transition-all duration-300"
+    ></div>
+  </button>
 
   {#if menuAberto}
     <Sidebar
@@ -142,68 +151,3 @@
     <MainView bind:visao={visaoAtual} on:navigate={handleNavigate} />
   {/if}
 </main>
-
-<style>
-  .container {
-    background-image: url("/background.jpg");
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-color: var(--bg-dark);
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-  }
-
-  .container::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.377);
-  }
-
-  .hamburger-menu {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    cursor: pointer;
-    padding: 10px;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    width: 30px;
-    height: 20px;
-    background: none;
-    border: none;
-    outline: none;
-  }
-
-  .hamburger-menu:hover {
-    opacity: 0.8;
-  }
-
-  .hamburger-menu:focus {
-    outline: 2px solid #ffffff;
-    outline-offset: 2px;
-  }
-
-  .hamburger-bar {
-    width: 100%;
-    height: 3px;
-    background-color: #ffffff;
-    border-radius: 2px;
-    transition: all 0.3s ease;
-  }
-
-  .hamburger-menu:hover .hamburger-bar {
-    background-color: #cccccc;
-  }
-</style>
