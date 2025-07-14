@@ -1,15 +1,17 @@
 <script lang="ts">
   export let logLines: string[] = [];
+
   function autoscroll(node: HTMLElement, logs: string[]) {
     function scrollToBottom() {
       setTimeout(() => {
         node.scrollTop = node.scrollHeight;
       }, 0);
     }
+
     scrollToBottom();
 
     return {
-      update(newLogs) {
+      update(newLogs: string[]) {
         scrollToBottom();
       },
     };
@@ -17,7 +19,7 @@
 </script>
 
 <div
-  class="bg-dark-blue-bg bg-opacity-50 rounded-lg mt-5 p-4 h-72 overflow-y-auto text-sm border border-gray-700 scroll-smooth"
+  class="bg-dark-blue-bg bg-opacity-50 rounded-lg mt-5 p-4 h-40 overflow-y-auto text-sm border border-gray-700 scroll-smooth"
   use:autoscroll={logLines}
 >
   <pre

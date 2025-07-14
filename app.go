@@ -70,6 +70,7 @@ func (a *App) ExecutarComando(comando string, args []string) (string, error) {
 	return syscmd.RunCommand("", comando, args...)
 }
 
+
 func (a *App) VerificarIPDisponivel(ip string) (bool, error) {
 	if net.ParseIP(ip) == nil {
 		return false, errors.New("formato de IP inválido")
@@ -368,6 +369,7 @@ func (a *App) ExecutarComandoSimples(titulo string, comando string, args ...stri
 		}
 	}()
 }
+
 
 func (a *App) emitLogRunner(eventName string, mensagem string) {
 	runtime.EventsEmit(a.ctx, eventName, mensagem)
