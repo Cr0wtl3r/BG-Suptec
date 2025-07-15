@@ -19,7 +19,7 @@
   <slot></slot>
 
   <button
-    class="w-full p-4 text-xl font-bold cursor-pointer bg-accent-orange text-dark-blue-bg border-none rounded-lg transition-all duration-200 hover:brightness-110 disabled:bg-gray-600 disabled:cursor-not-allowed"
+    class="w-full py-2 text-xl mt-2 font-bold cursor-pointer bg-accent-orange text-dark-blue-bg border-none rounded-lg transition-all duration-200 hover:brightness-110 disabled:bg-gray-600 disabled:cursor-not-allowed"
     on:click={() => dispatch("start")}
     disabled={emExecucao}
   >

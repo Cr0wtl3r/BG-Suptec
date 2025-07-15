@@ -67,7 +67,24 @@ func (a *App) emitLogAtivacao(tipo string, mensagem string) {
 }
 
 func (a *App) ExecutarComando(comando string, args []string) (string, error) {
-	return syscmd.RunCommand("", comando, args...)
+	output, err := syscmd.RunCommand("", comando, args...)
+
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			isShutdownCancel := comando == "shutdown"
+			for _, arg := range args {
+				if arg == "/a" {
+					isShutdownCancel = true
+					break
+				}
+			}
+
+			if isShutdownCancel && exitErr.ExitCode() == 1116 {
+				return output, nil
+			}
+		}
+	}
+	return output, err
 }
 
 
@@ -330,6 +347,71 @@ func (a *App) AtivarOffice(versao string) {
 		if !activationSuccessful {
 			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO: NENHUM SERVIDOR KMS CONSEGUIU ATIVAR ---")
 		}
+	}()
+}
+
+func (a *App) AjustarHoraFormatacao() {
+	go func() {
+		eventName := "log:ajustar:hora:formatacao"
+		a.emitLogRunner(eventName, "Iniciando ajuste da hora de formatação...")
+		time.Sleep(100 * time.Millisecond) // Pequena pausa para UX
+
+		// 1. Configurar o serviço de horário do Windows para iniciar automaticamente
+		a.emitLogRunner(eventName, "--> Configurando serviço de horário (w32time) para iniciar automaticamente...")
+		output, err := syscmd.RunCommand("", "sc", "config", "w32time", "start=auto")
+		a.emitLogRunner(eventName, output)
+		if err != nil {
+			a.emitLogRunner(eventName, fmt.Sprintf("ERRO: Falha ao configurar w32time: %v", err))
+			a.emitLogRunner(eventName, "--- OPERAÇÃO FINALIZADA COM ERRO ---")
+			return
+		}
+
+		// 2. Sincronizar a hora do computador com o servidor NTP
+		a.emitLogRunner(eventName, "--> Sincronizando hora com servidor NTP (pool.ntp.br)...")
+		// Usamos /resync para forçar a sincronização imediata
+		output, err = syscmd.RunCommand("", "w32tm", "/config", "/syncfromflags:manual", "/manualpeerlist:\"pool.ntp.br\"", "/reliable:YES", "/update")
+		a.emitLogRunner(eventName, output)
+		if err != nil {
+			a.emitLogRunner(eventName, fmt.Sprintf("ERRO: Falha ao configurar servidor NTP: %v", err))
+			a.emitLogRunner(eventName, "--- OPERAÇÃO FINALIZADA COM ERRO ---")
+			return
+		}
+
+		// 3. Reiniciar o serviço de horário do Windows
+		a.emitLogRunner(eventName, "--> Reiniciando o serviço de horário do Windows...")
+		output, err = syscmd.RunCommand("", "net", "stop", "w32time")
+		a.emitLogRunner(eventName, output)
+		if err != nil {
+			a.emitLogRunner(eventName, fmt.Sprintf("Aviso: Falha ao parar w32time (pode já estar parado ou erro menor): %v", err))
+		}
+		time.Sleep(2 * time.Second) // Pequena pausa para garantir que o serviço parou
+
+		output, err = syscmd.RunCommand("", "net", "start", "w32time")
+		a.emitLogRunner(eventName, output)
+		if err != nil {
+			a.emitLogRunner(eventName, fmt.Sprintf("ERRO: Falha ao iniciar w32time: %v", err))
+			a.emitLogRunner(eventName, "--- OPERAÇÃO FINALIZADA COM ERRO ---")
+			return
+		}
+		a.emitLogRunner(eventName, "Serviço de horário configurado e reiniciado com sucesso.")
+		time.Sleep(1 * time.Second) // Pequena pausa para garantir a sincronização inicial
+
+		// 4. Ajustar a data de formatação no registro
+		// Obter o timestamp Unix atual
+		now := time.Now().Unix()
+		installDate := fmt.Sprintf("%d", now)
+
+		a.emitLogRunner(eventName, fmt.Sprintf("--> Ajustando InstallDate no registro para o timestamp atual (%s)...", installDate))
+		output, err = syscmd.RunCommand("", "reg", "add", `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "/v", "InstallDate", "/t", "REG_DWORD", "/d", installDate, "/f")
+		a.emitLogRunner(eventName, output)
+		if err != nil {
+			a.emitLogRunner(eventName, fmt.Sprintf("ERRO: Falha ao ajustar InstallDate no registro: %v", err))
+			a.emitLogRunner(eventName, "--- OPERAÇÃO FINALIZADA COM ERRO ---")
+			return
+		}
+
+		a.emitLogRunner(eventName, "Hora de formatação ajustada com sucesso!")
+		a.emitLogRunner(eventName, "--- OPERAÇÃO CONCLUÍDA ---")
 	}()
 }
 

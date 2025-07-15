@@ -5,6 +5,8 @@
   import LimpaCacheDNS from "./features/LimpaCacheDNS.svelte";
   import DesativaHibernacao from "./features/DesativaHibernacao.svelte";
   import LimpaSpoolImpressao from "./features/LimpaSpoolImpressao.svelte";
+  import AgendarDesligamento from "./features/AgendarDesligamento.svelte";
+  import AjustarHoraFormatacao from "./features/AjustarHoraFormatacao.svelte";
   import FeatureRunner from "./features/FeatureRunner.svelte";
 
   export let visao;
@@ -31,6 +33,10 @@
     <DesativaHibernacao on:voltar={handleVoltar} />
   {:else if visao === "Limpa e Reinicia Spool de Impressao"}
     <LimpaSpoolImpressao on:voltar={handleVoltar} />
+  {:else if visao === "Agendar Desligamento"}
+    <AgendarDesligamento on:voltar={handleVoltar} />
+  {:else if visao === "Ajustar Hora da Formatação"}
+    <AjustarHoraFormatacao on:voltar={handleVoltar} />
   {:else}
     <FeatureRunner
       titulo={visao}
