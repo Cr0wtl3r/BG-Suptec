@@ -14,6 +14,10 @@ export function AlterarIP(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['AlterarIP'](arg1, arg2, arg3, arg4);
 }
 
+export function AlterarLayoutDeTeclado(arg1) {
+  return window['go']['main']['App']['AlterarLayoutDeTeclado'](arg1);
+}
+
 export function AlterarNomeComputador(arg1) {
   return window['go']['main']['App']['AlterarNomeComputador'](arg1);
 }
@@ -24,6 +28,10 @@ export function AtivarOffice(arg1) {
 
 export function AtivarWindows(arg1) {
   return window['go']['main']['App']['AtivarWindows'](arg1);
+}
+
+export function CorrigirCompartilhamentoWindows() {
+  return window['go']['main']['App']['CorrigirCompartilhamentoWindows']();
 }
 
 export function ExecutarComando(arg1, arg2) {
@@ -40,6 +48,18 @@ export function Login(arg1) {
 
 export function ObterInformacoesSistema() {
   return window['go']['main']['App']['ObterInformacoesSistema']();
+}
+
+export function ObterLayoutAtivo() {
+  return window['go']['main']['App']['ObterLayoutAtivo']();
+}
+
+export function ObterLayoutsDisponiveis() {
+  return window['go']['main']['App']['ObterLayoutsDisponiveis']();
+}
+
+export function ReiniciarComputador() {
+  return window['go']['main']['App']['ReiniciarComputador']();
 }
 
 export function VerificarIPDisponivel(arg1) {

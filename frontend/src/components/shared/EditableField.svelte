@@ -29,14 +29,18 @@
 <div
   class="bg-dark-blue-bg p-3 rounded-md border-l-4 border-primary-purple flex flex-col"
 >
-  <span class="block text-xs opacity-70 uppercase mb-1">{label}</span>
+  <span class="block text-xs opacity-70 uppercase mb-1 text-center"
+    >{label}</span
+  >
 
   {#if !editando}
-    <div class="flex items-center justify-between gap-2">
-      <span class="text-sm font-semibold break-all">{value}</span>
+    <div class="relative flex items-center justify-center min-h-[28px]">
+      <span class="text-sm font-semibold break-all text-center px-5"
+        >{value}</span
+      >
       <button
-        class="bg-transparent border-none cursor-pointer text-text-light opacity-60 transition-opacity duration-200 p-0.5
-          hover:opacity-100 hover:text-accent-orange disabled:cursor-not-allowed disabled:opacity-20"
+        aria-label="Editar campo"
+        class="absolute right-0 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-text-light opacity-60 transition-opacity duration-200 p-0.5 hover:opacity-100 hover:text-accent-orange disabled:cursor-not-allowed disabled:opacity-20"
         on:click={ativarEdicao}
         title="Editar"
         {disabled}
@@ -61,11 +65,12 @@
       <input
         type="text"
         bind:value={valorEditavel}
-        class="flex-grow bg-dark-blue-light border border-primary-purple rounded p-1.5 text-text-light text-sm font-semibold"
+        class="flex-grow bg-dark-blue-light border border-primary-purple rounded p-1.5 text-text-light text-sm font-semibold text-center"
         on:keydown={(e) => e.key === "Enter" && salvar()}
         on:keydown={(e) => e.key === "Escape" && cancelar()}
       />
       <button
+        aria-label="Salvar edição"
         class="bg-transparent border-none cursor-pointer text-text-light opacity-60 transition-opacity duration-200 p-0.5
         hover:opacity-100 hover:text-green-500"
         on:click={salvar}
@@ -85,6 +90,7 @@
         >
       </button>
       <button
+        aria-label="Cancelar edição"
         class="bg-transparent border-none cursor-pointer text-text-light opacity-60 transition-opacity duration-200 p-0.5
         hover:opacity-100 hover:text-red-500"
         on:click={cancelar}

@@ -7,6 +7,8 @@
   import LimpaSpoolImpressao from "./features/LimpaSpoolImpressao.svelte";
   import AgendarDesligamento from "./features/AgendarDesligamento.svelte";
   import AjustarHoraFormatacao from "./features/AjustarHoraFormatacao.svelte";
+  import CorrigirCompartilhamento from "./features/CorrigirCompartilhamento.svelte";
+  import AlterarLayoutTeclado from "./features/AlterarLayoutTeclado.svelte";
   import FeatureRunner from "./features/FeatureRunner.svelte";
 
   export let visao;
@@ -18,15 +20,15 @@
   }
 </script>
 
-<div
-  class="flex flex-col flex-grow items-center justify-center p-5 w-full h-full"
->
+<div class="w-full h-full">
   {#if visao === "Painel de Informações"}
     <p>Erro: Visão do Painel deveria ser tratada pelo App.svelte</p>
   {:else if visao === "Windows - Ativação"}
     <AtivacaoWindows on:voltar={handleVoltar} />
   {:else if visao === "Office - Ativação"}
     <AtivacaoOffice on:voltar={handleVoltar} />
+  {:else if visao === "Corrige Compartilhamento de Rede"}
+    <CorrigirCompartilhamento on:voltar={handleVoltar} />
   {:else if visao === "Limpa cache DNS"}
     <LimpaCacheDNS on:voltar={handleVoltar} />
   {:else if visao === "Desativa a Hibernação do Windows"}
@@ -37,6 +39,8 @@
     <AgendarDesligamento on:voltar={handleVoltar} />
   {:else if visao === "Ajustar Hora da Formatação"}
     <AjustarHoraFormatacao on:voltar={handleVoltar} />
+  {:else if visao === "Alterar Layout do Teclado"}
+    <AlterarLayoutTeclado on:voltar={handleVoltar} />
   {:else}
     <FeatureRunner
       titulo={visao}

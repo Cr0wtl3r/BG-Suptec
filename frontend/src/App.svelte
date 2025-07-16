@@ -9,6 +9,7 @@
   let visaoAtual = "Painel de Informações";
 
   const modulos = [
+    // ... (módulos sem alteração) ...
     {
       nome: "Info Rápida do Sistema",
       funcionalidades: ["Painel de Informações"],
@@ -32,7 +33,6 @@
       nome: "Reparos e Soluções",
       funcionalidades: [
         "Corrige Compartilhamento de Rede",
-        "Corrige Problemas de Impressoras",
         "Corrige Indexação e Busca",
         "Solução de Problemas do Windows",
         "Conclusão de Formatação",
@@ -51,7 +51,6 @@
     {
       nome: "Personalização e Sistema",
       funcionalidades: [
-        "Ajuste de Políticas do Windows 11",
         "Restaurar Menu de Contexto (Win 11)",
         "Restaurar Visualizador de Fotos",
         "Liberar Instalação (Win 11)",
@@ -106,7 +105,7 @@
 </script>
 
 <main
-  class="relative w-screen min-h-screen flex flex-col justify-center items-center bg-dark-blue-bg text-text-light overflow-x-hidden"
+  class="relative w-screen h-screen flex flex-col justify-center items-center bg-dark-blue-bg text-text-light overflow-hidden"
   style="background-image: url('/background.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-attachment: fixed;"
 >
   <div class="absolute inset-0 bg-black bg-opacity-40"></div>
@@ -146,8 +145,12 @@
       }}
     />
   {:else if visaoAtual === "Painel de Informações"}
-    <PainelInformacoes {modulos} on:navigate={handleNavigate} />
+    <div class="w-full h-full p-4 md:p-6 lg:p-8">
+      <PainelInformacoes {modulos} on:navigate={handleNavigate} />
+    </div>
   {:else}
-    <MainView bind:visao={visaoAtual} on:navigate={handleNavigate} />
+    <div class="w-full h-full p-4 md:p-6 lg:p-8">
+      <MainView bind:visao={visaoAtual} on:navigate={handleNavigate} />
+    </div>
   {/if}
 </main>

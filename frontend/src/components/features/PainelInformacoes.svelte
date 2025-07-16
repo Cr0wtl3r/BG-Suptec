@@ -7,15 +7,56 @@
     AlterarDNS,
   } from "../../../wailsjs/go/main/App";
   import Accordion from "../shared/Accordion.svelte";
+  import EditableField from "../shared/EditableField.svelte";
+
+  // ... (toda a lógica do script até as funções de salvar) ...
+  let info: InfoSistema | null = null;
+  let erro = "";
+  let campoBuscaElement: HTMLInputElement;
+  let gridContainerElement: HTMLDivElement;
+  let colunasDoGrid = 3;
+  let linhasDoGrid = 4;
+  let itensPorPagina = 12;
+
+  onMount(() => {
+    carregarInformacoes();
+    window.addEventListener("keydown", handleGlobalKeydown);
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        const LARGURA_MINIMA_ITEM = 180;
+        const GAP_DO_GRID = 12;
+        const ALTURA_MINIMA_ITEM = 70;
+        const novasColunas = Math.max(
+          1,
+          Math.floor(width / (LARGURA_MINIMA_ITEM + GAP_DO_GRID)),
+        );
+        const novasLinhas = Math.max(
+          1,
+          Math.floor(height / (ALTURA_MINIMA_ITEM + GAP_DO_GRID)),
+        );
+        colunasDoGrid = novasColunas;
+        linhasDoGrid = novasLinhas;
+        itensPorPagina = colunasDoGrid * linhasDoGrid;
+      }
+    });
+    if (gridContainerElement) {
+      observer.observe(gridContainerElement);
+    }
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeydown);
+      if (gridContainerElement) {
+        observer.unobserve(gridContainerElement);
+      }
+    };
+  });
 
   type Modulo = {
     nome: string;
     funcionalidades: string[];
   };
-
   export let modulos: Modulo[] = [];
   const dispatch = createEventDispatcher();
-
   type InfoSistema = {
     nomeComputador: string;
     versaoWindows: string;
@@ -31,77 +72,50 @@
     dnsSecundario: string;
     interfaceAtiva: string;
   };
-
   type ModalData = {
     tipo: "sucesso" | "erro";
     titulo: string;
     mensagem: string;
     visible: boolean;
   };
-
-  let info: InfoSistema | null = null;
-  let erro = "";
-  let campoBuscaElement: HTMLInputElement;
-
-  let editandoNome = false;
   let editandoIP = false;
   let editandoDNS = false;
-
-  let tempNomeComputador = "";
   let tempEnderecoIP = "";
   let tempMascaraRede = "";
   let tempGatewayPadrao = "";
   let tempDNSPrimario = "";
   let tempDNSSecundario = "";
-
   let salvandoNome = false;
   let salvandoIP = false;
   let salvandoDNS = false;
-
   let modal: ModalData = {
     tipo: "sucesso",
     titulo: "",
     mensagem: "",
     visible: false,
   };
-
   let isInfoSistemaOpen = false;
   let isInfoRedeOpen = false;
   let isInfoDNSOpen = false;
-
   let termoBusca = "";
-
-  const itensPorPagina = 12;
   let paginaAtual = 1;
-
   $: todasFuncionalidades = modulos
     .flatMap((m) => m.funcionalidades)
     .filter((f) => f !== "Painel de Informações")
     .sort((a, b) => a.localeCompare(b));
-
   $: funcionalidadesFiltradas = todasFuncionalidades.filter((f) =>
     f.toLowerCase().includes(termoBusca.toLowerCase()),
   );
-
   $: totalPaginas = Math.ceil(funcionalidadesFiltradas.length / itensPorPagina);
-
   $: funcionalidadesPaginadas = funcionalidadesFiltradas.slice(
     (paginaAtual - 1) * itensPorPagina,
     paginaAtual * itensPorPagina,
   );
-
   $: {
     if (termoBusca !== undefined) {
       paginaAtual = 1;
     }
   }
-
-  onMount(() => {
-    carregarInformacoes();
-    window.addEventListener("keydown", handleGlobalKeydown);
-    return () => window.removeEventListener("keydown", handleGlobalKeydown);
-  });
-
   const handleGlobalKeydown = (event: KeyboardEvent) => {
     if (event.ctrlKey || event.altKey || event.metaKey || event.key.length > 1)
       return;
@@ -109,24 +123,16 @@
       campoBuscaElement?.focus();
     }
   };
-
   function mostrarModal(
     tipo: "sucesso" | "erro",
     titulo: string,
     mensagem: string,
   ) {
-    modal = {
-      tipo,
-      titulo,
-      mensagem,
-      visible: true,
-    };
+    modal = { tipo, titulo, mensagem, visible: true };
   }
-
   function fecharModal() {
     modal.visible = false;
   }
-
   async function carregarInformacoes() {
     try {
       info = await ObterInformacoesSistema();
@@ -136,13 +142,9 @@
       info = null;
     }
   }
-
-  function iniciarEdicao(tipo: "nome" | "ip" | "dns") {
-    editandoNome = tipo === "nome";
+  function iniciarEdicao(tipo: "ip" | "dns") {
     editandoIP = tipo === "ip";
     editandoDNS = tipo === "dns";
-
-    if (tipo === "nome") tempNomeComputador = info?.nomeComputador || "";
     if (tipo === "ip") {
       tempEnderecoIP = info?.enderecoIP || "";
       tempMascaraRede = info?.mascaraRede || "255.255.255.0";
@@ -162,9 +164,9 @@
       }
     }
   }
-
-  async function salvarNomeComputador() {
-    if (!tempNomeComputador.trim()) {
+  async function handleSalvarNome(event: CustomEvent) {
+    const novoNome = event.detail.trim();
+    if (!novoNome) {
       mostrarModal(
         "erro",
         "Erro de Validação",
@@ -174,7 +176,7 @@
     }
     salvandoNome = true;
     try {
-      await AlterarNomeComputador(tempNomeComputador.trim());
+      await AlterarNomeComputador(novoNome);
       mostrarModal(
         "sucesso",
         "Sucesso!",
@@ -182,26 +184,28 @@
       );
       await new Promise((resolve) => setTimeout(resolve, 1500));
       await carregarInformacoes();
-      editandoNome = false;
     } catch (e) {
       mostrarModal("erro", "Erro", `Erro ao alterar nome: ${e}`);
     }
     salvandoNome = false;
   }
 
+  // MUDANÇA: Lógica de validação ajustada
   async function salvarIP() {
-    if (
-      !tempEnderecoIP.trim() ||
-      !tempMascaraRede.trim() ||
-      !tempGatewayPadrao.trim()
-    ) {
+    const ip = tempEnderecoIP.trim();
+    const mascara = tempMascaraRede.trim();
+    const gateway = tempGatewayPadrao.trim();
+
+    // Se o IP for preenchido, os outros campos também devem ser.
+    if (ip !== "" && (mascara === "" || gateway === "")) {
       mostrarModal(
         "erro",
         "Erro de Validação",
-        "Todos os campos (IP, Máscara e Gateway) devem ser preenchidos!",
+        "Para definir um IP estático, todos os campos (IP, Máscara e Gateway) devem ser preenchidos.",
       );
       return;
     }
+
     if (!info?.interfaceAtiva) {
       mostrarModal(
         "erro",
@@ -210,20 +214,18 @@
       );
       return;
     }
+
     salvandoIP = true;
     try {
-      await AlterarIP(
-        info.interfaceAtiva,
-        tempEnderecoIP,
-        tempMascaraRede,
-        tempGatewayPadrao,
-      );
-      mostrarModal(
-        "sucesso",
-        "Sucesso!",
-        "Configurações de rede alteradas! A conexão pode ser restabelecida em breve.",
-      );
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await AlterarIP(info.interfaceAtiva, ip, mascara, gateway);
+      const mensagem =
+        ip === ""
+          ? "Configurações de rede definidas para DHCP (dinâmico)!"
+          : "Configurações de rede alteradas com sucesso!";
+
+      mostrarModal("sucesso", "Sucesso!", mensagem);
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       await carregarInformacoes();
       editandoIP = false;
     } catch (e) {
@@ -232,15 +234,11 @@
     salvandoIP = false;
   }
 
+  // MUDANÇA: Lógica de validação ajustada
   async function salvarDNS() {
-    if (!tempDNSPrimario.trim()) {
-      mostrarModal(
-        "erro",
-        "Erro de Validação",
-        "DNS primário não pode estar vazio!",
-      );
-      return;
-    }
+    const primario = tempDNSPrimario.trim();
+    const secundario = tempDNSSecundario.trim();
+
     if (!info?.interfaceAtiva) {
       mostrarModal(
         "erro",
@@ -249,18 +247,18 @@
       );
       return;
     }
+
     salvandoDNS = true;
     try {
-      await AlterarDNS(
-        info.interfaceAtiva,
-        tempDNSPrimario.trim(),
-        tempDNSSecundario.trim(),
-      );
-      mostrarModal(
-        "sucesso",
-        "Sucesso!",
-        "Servidores DNS alterados com sucesso!",
-      );
+      await AlterarDNS(info.interfaceAtiva, primario, secundario);
+      const mensagem =
+        primario === ""
+          ? "Servidores DNS definidos para obter via DHCP (automático)!"
+          : "Servidores DNS alterados com sucesso!";
+
+      mostrarModal("sucesso", "Sucesso!", mensagem);
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       await carregarInformacoes();
       editandoDNS = false;
     } catch (e) {
@@ -270,21 +268,19 @@
   }
 
   function cancelarEdicao() {
-    editandoNome = false;
     editandoIP = false;
     editandoDNS = false;
   }
-
   function navegarPara(funcionalidade: string) {
     dispatch("navigate", funcionalidade);
   }
 </script>
 
 <div
-  class="w-full md:max-w-7xl h-full p-5 box-border bg-primary-purple bg-opacity-10 backdrop-blur-md border border-gray-700 rounded-xl animate-fadeIn flex flex-col md:flex-row gap-5 overflow-hidden"
+  class="w-full h-full bg-primary-purple bg-opacity-10 backdrop-blur-md border border-gray-700 rounded-xl animate-fadeIn flex flex-col md:flex-row gap-5 overflow-hidden"
 >
   <div
-    class="flex-none w-full md:w-96 p-5 rounded-lg overflow-y-auto bg-dark-blue-light bg-opacity-25"
+    class="md:flex-shrink-0 w-full md:w-96 p-5 rounded-lg overflow-y-auto bg-dark-blue-light bg-opacity-25"
   >
     <h2
       class="text-2xl font-bold text-center text-accent-orange mb-4 bg-opacity-35"
@@ -302,66 +298,12 @@
           bind:isOpen={isInfoSistemaOpen}
         >
           <div class="grid grid-cols-1 gap-3">
-            <div
-              class="bg-dark-blue-bg p-3 rounded-md border-l-4 border-primary-purple"
-            >
-              <span class="block text-xs text-center opacity-70 uppercase mb-1"
-                >Computador</span
-              >
-              <div class="flex items-start gap-2 min-h-6 w-full relative">
-                {#if editandoNome}
-                  <div class="flex items-center gap-2 w-full">
-                    <input
-                      type="text"
-                      bind:value={tempNomeComputador}
-                      class="flex-grow p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border"
-                      disabled={salvandoNome}
-                    />
-                    <div class="flex gap-1 flex-shrink-0">
-                      <button
-                        on:click={salvarNomeComputador}
-                        disabled={salvandoNome}
-                        class="p-1 px-1.5 border-none rounded-md cursor-pointer text-sm min-w-6 h-6 flex items-center justify-center flex-shrink-0 bg-dark-blue-light text-white hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >{salvandoNome ? "..." : "✓"}</button
-                      >
-                      <button
-                        on:click={cancelarEdicao}
-                        disabled={salvandoNome}
-                        class="p-1 px-1.5 border-none rounded-md cursor-pointer text-sm min-w-6 h-6 flex items-center justify-center flex-shrink-0 bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >✕</button
-                      >
-                    </div>
-                  </div>
-                {:else}
-                  <div class="flex items-start justify-center w-full relative">
-                    <span
-                      class="text-sm font-semibold break-all leading-snug text-center w-full"
-                      >{info.nomeComputador}</span
-                    >
-                    <button
-                      on:click={() => iniciarEdicao("nome")}
-                      class="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 bg-transparent text-accent-orange opacity-70 transition-all duration-200 hover:opacity-100 hover:bg-yellow-800 hover:bg-opacity-20 rounded-md"
-                      aria-label="Editar nome do computador"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path
-                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                        />
-                        <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
-                {/if}
-              </div>
-            </div>
-
+            <EditableField
+              label="Computador"
+              value={info.nomeComputador}
+              disabled={salvandoNome}
+              on:save={handleSalvarNome}
+            />
             <div
               class="bg-dark-blue-bg p-3 rounded-md border-l-4 text-center border-primary-purple"
             >
@@ -400,7 +342,6 @@
             </div>
           </div>
         </Accordion>
-
         <Accordion
           title="Informações de Rede (IPv4)"
           bind:isOpen={isInfoRedeOpen}
@@ -418,41 +359,74 @@
                     <input
                       type="text"
                       bind:value={tempEnderecoIP}
-                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border"
+                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border text-center"
                       disabled={salvandoIP}
-                      placeholder="Endereço IP"
+                      placeholder="IP (deixe em branco para DHCP)"
                     />
                     <input
                       type="text"
                       bind:value={tempMascaraRede}
-                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border"
+                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border text-center"
                       disabled={salvandoIP}
                       placeholder="Máscara de Sub-rede"
                     />
                     <input
                       type="text"
                       bind:value={tempGatewayPadrao}
-                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border"
+                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border text-center"
                       disabled={salvandoIP}
                       placeholder="Gateway Padrão"
                     />
-                    <div class="flex gap-1 justify-end mt-1">
+                    <div class="flex items-center gap-2 justify-end mt-1">
                       <button
+                        aria-label="Salvar IP"
                         on:click={salvarIP}
                         disabled={salvandoIP}
-                        class="p-1 px-1.5 border-none rounded-md cursor-pointer text-sm min-w-6 h-6 flex items-center justify-center flex-shrink-0 bg-dark-blue-light hover:bg-green-600 text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                        >{salvandoIP ? "..." : "✓"}</button
+                        title="Salvar"
+                        class="bg-transparent border-none cursor-pointer text-text-light opacity-60 transition-opacity duration-200 p-0.5 hover:opacity-100 hover:text-green-500 disabled:cursor-not-allowed disabled:opacity-20"
                       >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="3"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          ><polyline points="20 6 9 17 4 12"></polyline></svg
+                        >
+                      </button>
                       <button
+                        aria-label="Cancelar edição de IP"
                         on:click={cancelarEdicao}
                         disabled={salvandoIP}
-                        class="p-1 px-1.5 border-none rounded-md cursor-pointer text-sm min-w-6 h-6 flex items-center justify-center flex-shrink-0 bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >✕</button
+                        title="Cancelar"
+                        class="bg-transparent border-none cursor-pointer text-text-light opacity-60 transition-opacity duration-200 p-0.5 hover:opacity-100 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-20"
                       >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="3"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          ><line x1="18" y1="6" x2="6" y2="18"></line><line
+                            x1="6"
+                            y1="6"
+                            x2="18"
+                            y2="18"
+                          ></line></svg
+                        >
+                      </button>
                     </div>
                   </div>
                 {:else}
-                  <div class="flex items-start justify-center w-full relative">
+                  <div class="flex items-center justify-center w-full relative">
                     <span
                       class="text-sm font-semibold break-all leading-snug text-center w-full"
                     >
@@ -461,22 +435,23 @@
                     </span>
                     <button
                       on:click={() => iniciarEdicao("ip")}
-                      class="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 bg-transparent text-accent-orange opacity-70 transition-all duration-200 hover:opacity-100 hover:bg-yellow-800 hover:bg-opacity-20 rounded-md"
+                      class="absolute right-0 top-1/2 -translate-y-1/2 p-0.5 bg-transparent text-text-light opacity-60 transition-all duration-200 hover:!opacity-100 hover:text-accent-orange rounded-md"
                       aria-label="Editar configurações de rede"
                     >
                       <svg
+                        xmlns="http://www.w3.org/2000/svg"
                         width="14"
                         height="14"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
                         stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        ><path
+                          d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"
+                        ></path></svg
                       >
-                        <path
-                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                        />
-                        <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
                     </button>
                   </div>
                 {/if}
@@ -484,7 +459,6 @@
             </div>
           </div>
         </Accordion>
-
         <Accordion title="Configurações de DNS" bind:isOpen={isInfoDNSOpen}>
           <div class="grid grid-cols-1 gap-3">
             <div
@@ -497,34 +471,67 @@
                     <input
                       type="text"
                       bind:value={tempDNSPrimario}
-                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border"
+                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border text-center"
                       disabled={salvandoDNS}
-                      placeholder="DNS Primário (ex: 8.8.8.8)"
+                      placeholder="DNS (deixe em branco para auto)"
                     />
                     <input
                       type="text"
                       bind:value={tempDNSSecundario}
-                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border"
+                      class="p-1.5 border border-primary-purple rounded bg-dark-blue-light text-text-light text-sm box-border text-center"
                       disabled={salvandoDNS}
                       placeholder="DNS Secundário (opcional)"
                     />
-                    <div class="flex gap-1 justify-end mt-1">
+                    <div class="flex items-center gap-2 justify-end mt-1">
                       <button
+                        aria-label="Salvar DNS"
                         on:click={salvarDNS}
                         disabled={salvandoDNS}
-                        class="p-1 px-1.5 border-none rounded-md cursor-pointer text-sm min-w-6 h-6 flex items-center justify-center flex-shrink-0 text-white bg-dark-blue-light hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >{salvandoDNS ? "..." : "✓"}</button
+                        title="Salvar"
+                        class="bg-transparent border-none cursor-pointer text-text-light opacity-60 transition-opacity duration-200 p-0.5 hover:opacity-100 hover:text-green-500 disabled:cursor-not-allowed disabled:opacity-20"
                       >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="3"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          ><polyline points="20 6 9 17 4 12"></polyline></svg
+                        >
+                      </button>
                       <button
+                        aria-label="Cancelar edição de DNS"
                         on:click={cancelarEdicao}
                         disabled={salvandoDNS}
-                        class="p-1 px-1.5 border-none rounded-md cursor-pointer text-sm min-w-6 h-6 flex items-center justify-center flex-shrink-0 bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >✕</button
+                        title="Cancelar"
+                        class="bg-transparent border-none cursor-pointer text-text-light opacity-60 transition-opacity duration-200 p-0.5 hover:opacity-100 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-20"
                       >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="3"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          ><line x1="18" y1="6" x2="6" y2="18"></line><line
+                            x1="6"
+                            y1="6"
+                            x2="18"
+                            y2="18"
+                          ></line></svg
+                        >
+                      </button>
                     </div>
                   </div>
                 {:else}
-                  <div class="flex items-start justify-center w-full relative">
+                  <div class="flex items-center justify-center w-full relative">
                     <span
                       class="text-sm font-semibold break-all leading-snug text-center w-full"
                     >
@@ -539,22 +546,23 @@
                     </span>
                     <button
                       on:click={() => iniciarEdicao("dns")}
-                      class="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 bg-transparent text-accent-orange opacity-70 transition-all duration-200 hover:opacity-100 hover:bg-yellow-800 hover:bg-opacity-20 rounded-md"
+                      class="absolute right-0 top-1/2 -translate-y-1/2 p-0.5 bg-transparent text-text-light opacity-60 transition-all duration-200 hover:!opacity-100 hover:text-accent-orange rounded-md"
                       aria-label="Editar servidores DNS"
                     >
                       <svg
+                        xmlns="http://www.w3.org/2000/svg"
                         width="14"
                         height="14"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
                         stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        ><path
+                          d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"
+                        ></path></svg
                       >
-                        <path
-                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                        />
-                        <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
                     </button>
                   </div>
                 {/if}
@@ -566,7 +574,7 @@
     {/if}
   </div>
 
-  <div class="flex-grow flex flex-col min-w-0">
+  <div class="flex-grow flex flex-col min-w-0 p-5">
     <h3 class="text-xl font-bold text-accent-orange mb-5">
       Todas as Ferramentas ({funcionalidadesFiltradas.length})
     </h3>
@@ -578,7 +586,9 @@
       bind:this={campoBuscaElement}
     />
     <div
-      class="flex-grow overflow-y-auto pr-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pb-3 content-start"
+      class="flex-grow overflow-y-auto pr-2 grid gap-3 pb-3 content-start"
+      bind:this={gridContainerElement}
+      style="grid-template-columns: repeat({colunasDoGrid}, minmax(0, 1fr));"
     >
       {#each funcionalidadesPaginadas as funcionalidade (funcionalidade)}
         <button
@@ -598,9 +608,8 @@
         </p>
       {/if}
     </div>
-
-    {#if totalPaginas > 1}
-      <div class="flex justify-center items-center gap-2 mt-4 flex-shrink-0">
+    {#if funcionalidadesFiltradas.length > itensPorPagina}
+      <div class="flex-shrink-0 flex justify-center items-center gap-2 mt-4">
         <button
           class="px-3 py-1 bg-primary-purple text-white rounded-md cursor-pointer hover:bg-primary-purple-dark disabled:opacity-50 disabled:cursor-not-allowed"
           on:click={() => (paginaAtual = Math.max(1, paginaAtual - 1))}
@@ -623,7 +632,6 @@
     {/if}
   </div>
 </div>
-
 {#if modal.visible}
   <div
     class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-[1000] animate-modalFadeIn"

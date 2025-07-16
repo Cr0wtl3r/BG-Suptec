@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, createEventDispatcher } from "svelte"; // Adicionado createEventDispatcher
   import { EventsOn, EventsOff } from "../../../wailsjs/runtime";
   import { AtivarWindows } from "../../../wailsjs/go/main/App";
   import FeatureRunner from "./FeatureRunner.svelte";
+
+  const dispatch = createEventDispatcher(); // Adicionada a instância do dispatcher
 
   let logLines: string[] = ["Aguardando início..."];
   let emExecucao = false;
@@ -10,7 +12,7 @@
 
   async function iniciar() {
     emExecucao = true;
-    logLines = [];
+    logLines = ["Iniciando ativação do Windows..."]; // Mensagem inicial melhorada
     try {
       await AtivarWindows(versaoSelecionada);
     } catch (err) {
@@ -43,7 +45,7 @@
   bind:logLines
   bind:emExecucao
   on:start={iniciar}
-  on:voltar
+  on:voltar={() => dispatch("voltar")}
 >
   <div class="mb-6">
     <label for="versao-windows" class="font-bold text-text-light mb-2 block"

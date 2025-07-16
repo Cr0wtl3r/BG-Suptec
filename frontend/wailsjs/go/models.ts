@@ -1,3 +1,24 @@
+export namespace main {
+	
+	export class TecladoInfo {
+	    id: string;
+	    nome: string;
+	    tagIdioma: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TecladoInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.nome = source["nome"];
+	        this.tagIdioma = source["tagIdioma"];
+	    }
+	}
+
+}
+
 export namespace sysinfo {
 	
 	export class InfoSistema {

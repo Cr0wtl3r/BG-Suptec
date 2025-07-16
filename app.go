@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -21,13 +22,39 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+// --- Variáveis e Structs Globais ---
+
 var compiledPasswordHash string
+
+type TecladoInfo struct {
+	ID        string `json:"id"`
+	Nome      string `json:"nome"`
+	TagIdioma string `json:"tagIdioma"`
+}
+
+var tecladosDisponiveis = []TecladoInfo{
+	{ID: "0416:00000416", Nome: "Português (Brasil ABNT)", TagIdioma: "pt-BR"},
+	{ID: "0416:00010416", Nome: "Português (Brasil ABNT2)", TagIdioma: "pt-BR"},
+	{ID: "0816:00000816", Nome: "Português (Portugal)", TagIdioma: "pt-PT"},
+	{ID: "0409:00000409", Nome: "Inglês (Estados Unidos)", TagIdioma: "en-US"},
+	{ID: "0409:00020409", Nome: "Inglês (Estados Unidos-Internacional)", TagIdioma: "en-US"},
+	{ID: "0c0a:0000040a", Nome: "Espanhol (Espanha - Internacional)", TagIdioma: "es-ES"},
+	{ID: "080a:0000080a", Nome: "Espanhol (México/América Latina)", TagIdioma: "es-419"},
+}
 
 type App struct {
 	ctx           context.Context
 	senhaHasheada string
 }
 
+type OfficeVersionInfo struct {
+	ProdKey         string
+	UnPKeys         []string
+	LicensePatterns []string
+	KMS_Servers     []string
+}
+
+// --- Funções de Inicialização ---
 func init() {
 	if compiledPasswordHash == "" {
 		err := godotenv.Load()
@@ -41,15 +68,14 @@ func NewApp() *App {
 	if compiledPasswordHash != "" {
 		return &App{senhaHasheada: compiledPasswordHash}
 	}
-
 	hashDoEnv := os.Getenv("PASSWORD")
 	if hashDoEnv == "" {
 		log.Println("ERRO: PASSWORD (hash) não definido no .env ou como variável de ambiente. O login falhará.")
 	}
-
 	return &App{senhaHasheada: hashDoEnv}
 }
 
+// --- Métodos Principais da Aplicação ---
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
@@ -61,32 +87,38 @@ func (a *App) Login(senha string) bool {
 	return hashSenhaDigitada == a.senhaHasheada
 }
 
-func (a *App) emitLogAtivacao(tipo string, mensagem string) {
-	eventName := "log:ativacao:" + tipo
-	runtime.EventsEmit(a.ctx, eventName, mensagem)
-}
-
 func (a *App) ExecutarComando(comando string, args []string) (string, error) {
 	output, err := syscmd.RunCommand("", comando, args...)
-
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			isShutdownCancel := comando == "shutdown"
-			for _, arg := range args {
-				if arg == "/a" {
-					isShutdownCancel = true
-					break
-				}
-			}
-
+			isShutdownCancel := comando == "shutdown" && len(args) > 0 && args[0] == "/a"
 			if isShutdownCancel && exitErr.ExitCode() == 1116 {
-				return output, nil
+				return "Nenhum desligamento agendado para cancelar.", nil
 			}
 		}
+		return output, err
 	}
-	return output, err
+	return output, nil
 }
 
+func (a *App) ReiniciarComputador() (string, error) {
+	return syscmd.RunCommand("", "shutdown", "/r", "/t", "0")
+}
+
+// --- Funções de Sistema e Rede ---
+func (a *App) ObterInformacoesSistema() (sysinfo.InfoSistema, error) {
+	return sysinfo.GetInfo()
+}
+
+func (a *App) AlterarNomeComputador(novoNome string) error {
+	if len(novoNome) == 0 || len(novoNome) > 15 {
+		return errors.New("nome do computador deve ter entre 1 e 15 caracteres")
+	}
+	novoNome = strings.ReplaceAll(novoNome, " ", "")
+	cmd := fmt.Sprintf("Rename-Computer -NewName %s -Force -PassThru", novoNome)
+	_, err := syscmd.RunCommand("", "powershell", "-NoProfile", "-Command", cmd)
+	return err
+}
 
 func (a *App) VerificarIPDisponivel(ip string) (bool, error) {
 	if net.ParseIP(ip) == nil {
@@ -97,7 +129,20 @@ func (a *App) VerificarIPDisponivel(ip string) (bool, error) {
 	return err != nil, nil
 }
 
+// MUDANÇA: Lógica para IP dinâmico adicionada
 func (a *App) AlterarIP(interfaceName, novoIP, mascara, gateway string) error {
+	if interfaceName == "" {
+		return errors.New("não foi possível identificar a interface de rede para alteração")
+	}
+
+	// Se o campo de IP estiver vazio, configura para DHCP
+	if novoIP == "" {
+		cmd := fmt.Sprintf(`netsh interface ip set address name="%s" source=dhcp`, interfaceName)
+		_, err := syscmd.RunCommand("", "cmd", "/c", cmd)
+		return err
+	}
+
+	// Lógica original para IP estático
 	disponivel, err := a.VerificarIPDisponivel(novoIP)
 	if err != nil {
 		return fmt.Errorf("erro ao verificar disponibilidade do IP: %v", err)
@@ -105,65 +150,78 @@ func (a *App) AlterarIP(interfaceName, novoIP, mascara, gateway string) error {
 	if !disponivel {
 		return errors.New("o IP informado já está em uso na rede")
 	}
+
+	cmd := fmt.Sprintf(`netsh interface ip set address name="%s" static %s %s %s`, interfaceName, novoIP, mascara, gateway)
+	_, err = syscmd.RunCommand("", "cmd", "/c", cmd)
+	return err
+}
+
+// MUDANÇA: Lógica para DNS dinâmico adicionada
+func (a *App) AlterarDNS(interfaceName, dnsPrimario, dnsSecundario string) error {
 	if interfaceName == "" {
 		return errors.New("não foi possível identificar a interface de rede para alteração")
 	}
 
-	cmd := fmt.Sprintf(`netsh interface ip set address name="%s" static %s %s %s`,
-		interfaceName, novoIP, mascara, gateway)
-
-	output, err := syscmd.RunCommand("", "cmd", "/c", cmd)
-	if err != nil {
-		return fmt.Errorf("erro ao alterar IP: %v - %s", err, output)
+	// Se o campo DNS primário estiver vazio, configura para DHCP
+	if dnsPrimario == "" {
+		cmd := fmt.Sprintf(`netsh interface ip set dns name="%s" source=dhcp`, interfaceName)
+		_, err := syscmd.RunCommand("", "cmd", "/c", cmd)
+		return err
 	}
-	return nil
-}
 
-func (a *App) AlterarNomeComputador(novoNome string) error {
-	if len(novoNome) == 0 || len(novoNome) > 15 {
-		return errors.New("nome do computador deve ter entre 1 e 15 caracteres")
-	}
-	novoNome = strings.ReplaceAll(novoNome, " ", "")
-
-	cmd := fmt.Sprintf("Rename-Computer -NewName %s -Force -PassThru", novoNome)
-	output, err := syscmd.RunCommand("", "powershell", "-NoProfile", "-Command", cmd)
-	if err != nil {
-		return fmt.Errorf("erro ao alterar nome do computador: %v - %s", err, output)
-	}
-	return nil
-}
-
-func (a *App) AlterarDNS(interfaceName, dnsPrimario, dnsSecundario string) error {
+	// Lógica original para DNS estático
 	if net.ParseIP(dnsPrimario) == nil {
 		return errors.New("DNS primário tem formato inválido")
 	}
-	if interfaceName == "" {
-		return errors.New("não foi possível identificar a interface de rede para alteração")
-	}
 
 	cmdPrimario := fmt.Sprintf(`netsh interface ip set dns name="%s" static %s`, interfaceName, dnsPrimario)
-	output, err := syscmd.RunCommand("", "cmd", "/c", cmdPrimario)
+	_, err := syscmd.RunCommand("", "cmd", "/c", cmdPrimario)
 	if err != nil {
-		return fmt.Errorf("erro ao configurar DNS primário: %v - %s", err, output)
+		return fmt.Errorf("erro ao configurar DNS primário: %v", err)
 	}
 
-	if dnsSecundario != "" && net.ParseIP(dnsSecundario) != nil {
+	if dnsSecundario != "" {
+		if net.ParseIP(dnsSecundario) == nil {
+			return errors.New("DNS secundário tem formato inválido")
+		}
 		cmdSecundario := fmt.Sprintf(`netsh interface ip add dns name="%s" %s index=2`, interfaceName, dnsSecundario)
-		output, err = syscmd.RunCommand("", "cmd", "/c", cmdSecundario)
+		_, err = syscmd.RunCommand("", "cmd", "/c", cmdSecundario)
 		if err != nil {
-			return fmt.Errorf("erro ao configurar DNS secundário: %v - %s", err, output)
+			return fmt.Errorf("erro ao configurar DNS secundário: %v", err)
 		}
 	}
+	
 	return nil
 }
 
-func (a *App) ObterInformacoesSistema() (sysinfo.InfoSistema, error) {
-	return sysinfo.GetInfo()
+// --- Funções de Layout de Teclado ---
+func (a *App) ObterLayoutsDisponiveis() []TecladoInfo {
+	sort.Slice(tecladosDisponiveis, func(i, j int) bool {
+		return tecladosDisponiveis[i].Nome < tecladosDisponiveis[j].Nome
+	})
+	return tecladosDisponiveis
 }
 
+func (a *App) ObterLayoutAtivo() (string, error) {
+	cmd := `(Get-WinUserLanguageList)[0].InputMethodTips[0]`
+	output, err := syscmd.RunCommand("", "powershell", "-NoProfile", "-Command", cmd)
+	if err != nil {
+		return "", fmt.Errorf("falha ao obter layout ativo: %v", err)
+	}
+	return strings.TrimSpace(output), nil
+}
+
+func (a *App) AlterarLayoutDeTeclado(tagIdioma string) error {
+	cmd := fmt.Sprintf(`Set-WinUserLanguageList -LanguageList %s -Force`, tagIdioma)
+	_, err := syscmd.RunCommand("", "powershell", "-NoProfile", "-Command", cmd)
+	return err
+}
+
+// --- Funções de Ativação e Correção ---
 func (a *App) AtivarWindows(versao string) {
 	go func() {
-		time.Sleep(100 * time.Millisecond)
+		eventName := "log:ativacao:windows"
+		a.emitLogRunner(eventName, "Iniciando ativação para Windows "+versao+"...")
 		keys := map[string]string{
 			"pro":        "W269N-WFGWX-YVC9B-4J6C9-T83GX",
 			"education":  "NW6C2-QMPVW-D7KKK-3GKT6-VCFB2",
@@ -172,260 +230,232 @@ func (a *App) AtivarWindows(versao string) {
 		}
 		key, ok := keys[versao]
 		if !ok {
-			a.emitLogAtivacao("windows", "ERRO: Versão do Windows inválida.")
+			a.emitLogRunner(eventName, "ERRO: Versão do Windows inválida.")
+			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO ---")
 			return
 		}
-		a.emitLogAtivacao("windows", "Iniciando ativação para Windows "+versao+"...")
-		a.emitLogAtivacao("windows", "--> Instalando chave do produto (GVLK)...")
+
 		slmgrPath := filepath.Join(os.Getenv("SystemRoot"), "System32", "slmgr.vbs")
 
-		output, err := syscmd.RunCommand("", "cscript", slmgrPath, "/ipk", key)
-		a.emitLogAtivacao("windows", output)
-		if err != nil {
-			a.emitLogAtivacao("windows", "--- FALHA AO INSTALAR CHAVE ---")
-			return
-		}
-
-		a.emitLogAtivacao("windows", "--> Definindo servidor KMS: kms.msguides.com...")
-		output, err = syscmd.RunCommand("", "cscript", slmgrPath, "/skms", "kms.msguides.com")
-		a.emitLogAtivacao("windows", output)
-		if err != nil { a.emitLogAtivacao("windows", "Aviso: Falha ao definir KMS. Mas tentando ativar mesmo assim: " + err.Error()) }
-
-
-		a.emitLogAtivacao("windows", "--> Tentando ativar...")
-		output, err = syscmd.RunCommand("", "cscript", slmgrPath, "/ato")
-		a.emitLogAtivacao("windows", output)
+		a.runCommandAndLog(eventName, "Instalando chave do produto (GVLK)...", "cscript", slmgrPath, "/ipk", key)
+		a.runCommandAndLog(eventName, "Definindo servidor KMS: kms.msguides.com...", "cscript", slmgrPath, "/skms", "kms.msguides.com")
+		
+		a.emitLogRunner(eventName, "--> Tentando ativar...")
+		output, err := syscmd.RunCommand("", "cscript", slmgrPath, "/ato")
+		a.emitLogRunner(eventName, output)
 		if err == nil {
-			a.emitLogAtivacao("windows", "--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---")
+			a.emitLogRunner(eventName, "--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---")
 		} else {
-			a.emitLogAtivacao("windows", "--- FALHA NA ATIVAÇÃO ---")
+			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO ---")
 		}
 	}()
 }
 
-type OfficeVersionInfo struct {
-	ProdKey         string
-	UnPKeys         []string
-	LicensePatterns []string
-	KMS_Servers     []string
-}
-
 func (a *App) AtivarOffice(versao string) {
 	go func() {
-		a.emitLogAtivacao("office", "Iniciando ativação para Office...")
+		eventName := "log:ativacao:office"
+		a.emitLogRunner(eventName, "Iniciando ativação para Office...")
 		officePath, err := findOfficePathGo()
 		if err != nil {
-			a.emitLogAtivacao("office", "ERRO: "+err.Error())
-			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO GERAL ---")
+			a.emitLogRunner(eventName, "ERRO: "+err.Error())
+			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO GERAL ---")
 			return
 		}
-		a.emitLogAtivacao("office", "Pasta do Office encontrada em: "+officePath)
+		a.emitLogRunner(eventName, "Pasta do Office encontrada em: "+officePath)
 
 		versions := map[string]OfficeVersionInfo{
 			"2016": {
 				ProdKey:         "XQNVK-8JYDB-WJ9W3-YJ8YR-WFG99",
 				UnPKeys:         []string{"BTDRB", "KHGM9", "CPQVG"},
 				LicensePatterns: []string{`proplusvl_kms.*\.xrm-ms`},
-				KMS_Servers:     []string{"107.173.230.24","kms9.msguides.com", "23.226.136.46", "kms8.msguides.com"},
+				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
 			},
 			"2021": {
 				ProdKey:         "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
 				UnPKeys:         []string{"6F7TH"},
 				LicensePatterns: []string{`ProPlus2021VL_KMS.*\.xrm-ms`},
-				KMS_Servers:     []string{"107.173.230.24","kms9.msguides.com", "23.226.136.46", "kms8.msguides.com"},
+				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
 			},
 			"2024": {
 				ProdKey:         "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
 				UnPKeys:         []string{"6F7TH"},
 				LicensePatterns: []string{`ProPlus2024VL_KMS.*\.xrm-ms`},
-				KMS_Servers:     []string{"107.173.230.24","kms9.msguides.com", "23.226.136.46", "kms8.msguides.com"},
+				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
 			},
 		}
 
 		info, ok := versions[versao]
 		if !ok {
-			a.emitLogAtivacao("office", "ERRO: Versão do Office inválida. As versões suportadas são 2016, 2021, 2024.")
-			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO ---")
+			a.emitLogRunner(eventName, "ERRO: Versão do Office inválida.")
+			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO ---")
 			return
 		}
 
-		a.emitLogAtivacao("office", "--> Fechando processos do Office...")
-		_, _ = syscmd.RunCommand("", "taskkill", "/f", "/im", "winword.exe", "/im", "excel.exe", "/im", "powerpnt.exe", "/im", "outlook.exe")
+		a.runCommandAndLog(eventName, "Fechando processos do Office...", "taskkill", "/f", "/im", "winword.exe", "/im", "excel.exe", "/im", "powerpnt.exe", "/im", "outlook.exe")
 		time.Sleep(1 * time.Second)
 
 		osppPath := filepath.Join(officePath, "ospp.vbs")
 
 		for _, unpkey := range info.UnPKeys {
-			a.emitLogAtivacao("office", fmt.Sprintf("--> Desinstalando chave do produto existente (%s)...", unpkey))
-			output, err := syscmd.RunCommand(officePath, "cscript", osppPath, "/unpkey:"+unpkey)
-			if err != nil {
-				a.emitLogAtivacao("office", fmt.Sprintf("Aviso: Falha ao desinstalar chave %s (pode não existir): %v - %s", unpkey, err, output))
-			} else {
-				a.emitLogAtivacao("office", output)
-			}
+			a.runCommandAndLog(eventName, fmt.Sprintf("Desinstalando chave do produto existente (%s)...", unpkey), "cscript", osppPath, "/unpkey:"+unpkey)
 		}
 
 		if len(info.LicensePatterns) > 0 {
-			licensesDirCandidates := []string{
-				filepath.Join(officePath, "..", "root", "Licenses16"),
-				filepath.Join(officePath, "..", "root", "Licenses15"),
-			}
-			foundLicensesDir := ""
-			for _, dir := range licensesDirCandidates {
-				if _, err := os.Stat(dir); err == nil {
-					foundLicensesDir = dir
-					break
-				}
-			}
-
-			if foundLicensesDir == "" {
-				a.emitLogAtivacao("office", "Aviso: Diretório de licenças KMS não encontrado. Pulando instalação de licenças.")
-			} else {
-				files, err := os.ReadDir(foundLicensesDir)
-				if err != nil {
-					a.emitLogAtivacao("office", fmt.Sprintf("Erro ao ler diretório de licenças %s: %v", foundLicensesDir, err))
-				} else {
-					for _, pattern := range info.LicensePatterns {
-						re := regexp.MustCompile(pattern)
-						for _, file := range files {
-							if !file.IsDir() && re.MatchString(file.Name()) {
-								licensePath := filepath.Join(foundLicensesDir, file.Name())
-								a.emitLogAtivacao("office", fmt.Sprintf("--> Instalando licença KMS: %s", file.Name()))
-								output, err := syscmd.RunCommand(officePath, "cscript", osppPath, "/inslic:"+licensePath)
-								a.emitLogAtivacao("office", output)
-								if err != nil {
-									a.emitLogAtivacao("office", fmt.Sprintf("--- FALHA AO INSTALAR LICENÇA %s ---", file.Name()))
-								}
-							}
-						}
-					}
-				}
-			}
+			a.instalarLicencasOffice(eventName, officePath, info.LicensePatterns)
 		}
 
-		a.emitLogAtivacao("office", fmt.Sprintf("--> Instalando chave do produto GVLK (%s)...", info.ProdKey))
-		output, err := syscmd.RunCommand(officePath, "cscript", osppPath, "/inpkey:"+info.ProdKey)
-		a.emitLogAtivacao("office", output)
-		if err != nil {
-			a.emitLogAtivacao("office", "--- FALHA AO INSTALAR CHAVE DO PRODUTO GVLK ---")
-			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO ---")
-			return
-		}
-
-		a.emitLogAtivacao("office", "--> Definindo porta KMS: 1688 (padrão)...")
-		output, err = syscmd.RunCommand(officePath, "cscript", osppPath, "/setprt:1688")
-		a.emitLogAtivacao("office", output)
-		if err != nil { a.emitLogAtivacao("office", "Aviso: Falha ao definir porta KMS. " + err.Error()) }
-
+		a.runCommandAndLog(eventName, fmt.Sprintf("Instalando chave do produto GVLK (%s)...", info.ProdKey), "cscript", osppPath, "/inpkey:"+info.ProdKey)
+		a.runCommandAndLog(eventName, "Definindo porta KMS: 1688 (padrão)...", "cscript", osppPath, "/setprt:1688")
 
 		activationSuccessful := false
 		for _, server := range info.KMS_Servers {
-			a.emitLogAtivacao("office", fmt.Sprintf("--> Definindo servidor KMS: %s...", server))
-			output, err = syscmd.RunCommand(officePath, "cscript", osppPath, "/sethst:"+server)
-			a.emitLogAtivacao("office", output)
-			if err != nil {
-				a.emitLogAtivacao("office", fmt.Sprintf("Aviso: Falha ao definir servidor %s: %v", server, err))
-				continue
-			}
+			a.runCommandAndLog(eventName, fmt.Sprintf("Definindo servidor KMS: %s...", server), "cscript", osppPath, "/sethst:"+server)
+			
+			a.emitLogRunner(eventName, fmt.Sprintf("--> Tentando ativar com %s...", server))
+			output, err := syscmd.RunCommand(officePath, "cscript", osppPath, "/act")
+			a.emitLogRunner(eventName, output)
 
-			a.emitLogAtivacao("office", fmt.Sprintf("--> Tentando ativar com %s...", server))
-			output, err = syscmd.RunCommand(officePath, "cscript", osppPath, "/act")
-			a.emitLogAtivacao("office", output)
-
-			if err == nil && (strings.Contains(output, "Product activation successful") || strings.Contains(output, "activated successfully") || strings.Contains(output, "licença ativa")) {
-				a.emitLogAtivacao("office", "--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---")
+			if err == nil && (strings.Contains(strings.ToLower(output), "product activation successful") || strings.Contains(strings.ToLower(output), "ativado com êxito")) {
+				a.emitLogRunner(eventName, "--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---")
 				activationSuccessful = true
 				break
 			} else {
-				a.emitLogAtivacao("office", fmt.Sprintf("--- FALHA NA ATIVAÇÃO COM %s (tentando o próximo, se houver) ---", server))
-				if err != nil {
-					a.emitLogAtivacao("office", fmt.Sprintf("Detalhes do erro: %v", err))
-				}
+				a.emitLogRunner(eventName, fmt.Sprintf("--- Falha na ativação com %s. Tentando próximo... ---", server))
 			}
 		}
 
 		if !activationSuccessful {
-			a.emitLogAtivacao("office", "--- FALHA NA ATIVAÇÃO: NENHUM SERVIDOR KMS CONSEGUIU ATIVAR ---")
+			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO: NENHUM SERVIDOR KMS FUNCIONOU. ---")
 		}
 	}()
 }
+
 
 func (a *App) AjustarHoraFormatacao() {
 	go func() {
 		eventName := "log:ajustar:hora:formatacao"
 		a.emitLogRunner(eventName, "Iniciando ajuste da hora de formatação...")
-		time.Sleep(100 * time.Millisecond) // Pequena pausa para UX
 
-		// 1. Configurar o serviço de horário do Windows para iniciar automaticamente
-		a.emitLogRunner(eventName, "--> Configurando serviço de horário (w32time) para iniciar automaticamente...")
-		output, err := syscmd.RunCommand("", "sc", "config", "w32time", "start=auto")
-		a.emitLogRunner(eventName, output)
-		if err != nil {
-			a.emitLogRunner(eventName, fmt.Sprintf("ERRO: Falha ao configurar w32time: %v", err))
-			a.emitLogRunner(eventName, "--- OPERAÇÃO FINALIZADA COM ERRO ---")
-			return
-		}
+		a.runCommandAndLog(eventName, "Configurando serviço de horário (w32time) para iniciar automaticamente...", "sc", "config", "w32time", "start=auto")
+		a.runCommandAndLog(eventName, "Sincronizando hora com servidor NTP (pool.ntp.br)...", "w32tm", "/config", "/syncfromflags:manual", "/manualpeerlist:\"pool.ntp.br\"", "/reliable:YES", "/update")
+		a.runCommandAndLog(eventName, "Reiniciando o serviço de horário do Windows...", "net", "stop", "w32time")
+		time.Sleep(1 * time.Second)
+		a.runCommandAndLog(eventName, "", "net", "start", "w32time")
 
-		// 2. Sincronizar a hora do computador com o servidor NTP
-		a.emitLogRunner(eventName, "--> Sincronizando hora com servidor NTP (pool.ntp.br)...")
-		// Usamos /resync para forçar a sincronização imediata
-		output, err = syscmd.RunCommand("", "w32tm", "/config", "/syncfromflags:manual", "/manualpeerlist:\"pool.ntp.br\"", "/reliable:YES", "/update")
-		a.emitLogRunner(eventName, output)
-		if err != nil {
-			a.emitLogRunner(eventName, fmt.Sprintf("ERRO: Falha ao configurar servidor NTP: %v", err))
-			a.emitLogRunner(eventName, "--- OPERAÇÃO FINALIZADA COM ERRO ---")
-			return
-		}
-
-		// 3. Reiniciar o serviço de horário do Windows
-		a.emitLogRunner(eventName, "--> Reiniciando o serviço de horário do Windows...")
-		output, err = syscmd.RunCommand("", "net", "stop", "w32time")
-		a.emitLogRunner(eventName, output)
-		if err != nil {
-			a.emitLogRunner(eventName, fmt.Sprintf("Aviso: Falha ao parar w32time (pode já estar parado ou erro menor): %v", err))
-		}
-		time.Sleep(2 * time.Second) // Pequena pausa para garantir que o serviço parou
-
-		output, err = syscmd.RunCommand("", "net", "start", "w32time")
-		a.emitLogRunner(eventName, output)
-		if err != nil {
-			a.emitLogRunner(eventName, fmt.Sprintf("ERRO: Falha ao iniciar w32time: %v", err))
-			a.emitLogRunner(eventName, "--- OPERAÇÃO FINALIZADA COM ERRO ---")
-			return
-		}
-		a.emitLogRunner(eventName, "Serviço de horário configurado e reiniciado com sucesso.")
-		time.Sleep(1 * time.Second) // Pequena pausa para garantir a sincronização inicial
-
-		// 4. Ajustar a data de formatação no registro
-		// Obter o timestamp Unix atual
 		now := time.Now().Unix()
 		installDate := fmt.Sprintf("%d", now)
+		a.runCommandAndLog(eventName, "Ajustando InstallDate no registro para o timestamp atual...", "reg", "add", `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "/v", "InstallDate", "/t", "REG_DWORD", "/d", installDate, "/f")
+		
+		a.emitLogRunner(eventName, "--- AJUSTE DE HORA CONCLUÍDO ---")
+	}()
+}
 
-		a.emitLogRunner(eventName, fmt.Sprintf("--> Ajustando InstallDate no registro para o timestamp atual (%s)...", installDate))
-		output, err = syscmd.RunCommand("", "reg", "add", `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "/v", "InstallDate", "/t", "REG_DWORD", "/d", installDate, "/f")
-		a.emitLogRunner(eventName, output)
-		if err != nil {
-			a.emitLogRunner(eventName, fmt.Sprintf("ERRO: Falha ao ajustar InstallDate no registro: %v", err))
-			a.emitLogRunner(eventName, "--- OPERAÇÃO FINALIZADA COM ERRO ---")
-			return
+func (a *App) CorrigirCompartilhamentoWindows() {
+	go func() {
+		eventName := "log:compartilhamento"
+		a.emitLogRunner(eventName, "INICIANDO CORREÇÃO DE COMPARTILHAMENTO DE REDE...")
+
+		a.emitLogRunner(eventName, "\n--> Etapa 1/4: Configurando Serviços de Rede...")
+		servicos := []string{"LanmanServer", "LanmanWorkstation", "FDResPub", "SSDPSRV", "IKEEXT", "PolicyAgent"}
+		for _, s := range servicos {
+			a.runCommandAndLog(eventName, "Configurando serviço: "+s, "sc", "config", s, "start=auto")
+			a.runCommandAndLog(eventName, "", "net", "start", s)
 		}
 
-		a.emitLogRunner(eventName, "Hora de formatação ajustada com sucesso!")
-		a.emitLogRunner(eventName, "--- OPERAÇÃO CONCLUÍDA ---")
+		a.emitLogRunner(eventName, "\n--> Etapa 2/4: Configurando Regras de Firewall do Windows...")
+		a.runCommandAndLog(eventName, "Habilitando grupo 'Compartilhamento de Arquivos e Impressoras'...", "netsh", "advfirewall", "firewall", "set", "rule", "group=\"File and Printer Sharing\"", "new", "enable=Yes")
+		a.runCommandAndLog(eventName, "Habilitando grupo 'Remote Service Management'...", "netsh", "advfirewall", "firewall", "set", "rule", "group=\"Remote Service Management\"", "new", "enable=yes")
+
+		a.emitLogRunner(eventName, "\n--> Etapa 3/4: Aplicando Configurações no Registro do Windows...")
+		type regChange struct {
+			Path, Value, Type, Data, LogMsg string
+		}
+		changes := []regChange{
+			{`HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters`, "AllowInsecureGuestAuth", "REG_DWORD", "1", "Habilitando logons de convidado não seguros..."},
+			{`HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters`, "RequireSecuritySignature", "REG_DWORD", "0", "Ajustando política de assinatura digital (Require)..."},
+			{`HKLM\SYSTEM\CurrentControlSet\Control\Print`, "RpcAuthnLevelPrivacyEnabled", "REG_DWORD", "0", "Desativando privacidade RPC estrita para impressoras..."},
+			{`HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint`, "RestrictDriverInstallationToAdministrators", "REG_DWORD", "0", "Permitindo instalação de drivers de impressão..."},
+			{`HKLM\SYSTEM\CurrentControlSet\Control\Lsa`, "limitblankpassworduse", "REG_DWORD", "0", "Habilitando acesso para usuários com senha em branco..."},
+		}
+		for _, change := range changes {
+			a.runCommandAndLog(eventName, change.LogMsg, "reg", "add", change.Path, "/v", change.Value, "/t", change.Type, "/d", change.Data, "/f")
+		}
+
+		a.emitLogRunner(eventName, "\n--> Etapa 4/4: Finalizando e Aplicando Políticas...")
+		a.runCommandAndLog(eventName, "Reiniciando Spooler de Impressão...", "net", "stop", "spooler")
+		time.Sleep(2 * time.Second)
+		a.runCommandAndLog(eventName, "", "net", "start", "spooler")
+		a.runCommandAndLog(eventName, "Forçando atualização das políticas de grupo...", "gpupdate", "/force")
+
+		a.emitLogRunner(eventName, "\n--- OPERAÇÃO CONCLUÍDA ---")
+		a.emitLogRunner(eventName, "É altamente recomendável reiniciar o computador.")
+		runtime.EventsEmit(a.ctx, "compartilhamento:finalizado")
 	}()
+}
+
+
+// --- Funções Auxiliares ---
+func (a *App) emitLogRunner(eventName string, mensagem string) {
+	runtime.EventsEmit(a.ctx, eventName, mensagem)
+}
+
+func (a *App) runCommandAndLog(eventName, logMsg string, command string, args ...string) {
+	if logMsg != "" {
+		a.emitLogRunner(eventName, "--> "+logMsg)
+	}
+	output, err := syscmd.RunCommand("", command, args...)
+	if err != nil {
+		a.emitLogRunner(eventName, fmt.Sprintf("AVISO: Comando encontrou um erro (pode ser normal): %v", err))
+	}
+	if output != "" {
+		a.emitLogRunner(eventName, strings.TrimSpace(output))
+	}
+}
+
+func (a *App) instalarLicencasOffice(eventName, officePath string, patterns []string) {
+	licensesDirCandidates := []string{
+		filepath.Join(officePath, "..", "root", "Licenses16"),
+		filepath.Join(officePath, "..", "root", "Licenses15"),
+	}
+	foundLicensesDir := ""
+	for _, dir := range licensesDirCandidates {
+		if _, err := os.Stat(dir); err == nil {
+			foundLicensesDir = dir
+			break
+		}
+	}
+
+	if foundLicensesDir == "" {
+		a.emitLogRunner(eventName, "Aviso: Diretório de licenças KMS não encontrado. Pulando esta etapa.")
+		return
+	}
+	
+	files, err := os.ReadDir(foundLicensesDir)
+	if err != nil {
+		a.emitLogRunner(eventName, fmt.Sprintf("Erro ao ler diretório de licenças %s: %v", foundLicensesDir, err))
+		return
+	}
+
+	osppPath := filepath.Join(officePath, "ospp.vbs")
+	for _, pattern := range patterns {
+		re := regexp.MustCompile(pattern)
+		for _, file := range files {
+			if !file.IsDir() && re.MatchString(file.Name()) {
+				licensePath := filepath.Join(foundLicensesDir, file.Name())
+				a.runCommandAndLog(eventName, fmt.Sprintf("Instalando licença KMS: %s", file.Name()), "cscript", osppPath, "/inslic:"+licensePath)
+			}
+		}
+	}
 }
 
 func findOfficePathGo() (string, error) {
 	programFiles := os.Getenv("ProgramFiles")
 	programFilesX86 := os.Getenv("ProgramFiles(x86)")
-
 	basePaths := []string{
 		filepath.Join(programFiles, "Microsoft Office"),
 		filepath.Join(programFilesX86, "Microsoft Office"),
 	}
-
 	versionFolders := []string{"Office16", "Office15"}
-
 	for _, basePath := range basePaths {
 		for _, versionFolder := range versionFolders {
 			fullPath := filepath.Join(basePath, versionFolder)
@@ -439,20 +469,17 @@ func findOfficePathGo() (string, error) {
 
 func (a *App) ExecutarComandoSimples(titulo string, comando string, args ...string) {
 	go func() {
-		eventName := "log:runner"
+		eventName := "log:runner" 
 		a.emitLogRunner(eventName, "Iniciando tarefa: "+titulo)
 		time.Sleep(100 * time.Millisecond)
+
 		output, err := syscmd.RunCommand("", comando, args...)
 		a.emitLogRunner(eventName, output)
+
 		if err != nil {
 			a.emitLogRunner(eventName, "--- TAREFA CONCLUÍDA COM ERRO ---")
 		} else {
 			a.emitLogRunner(eventName, "--- TAREFA CONCLUÍDA COM SUCESSO ---")
 		}
 	}()
-}
-
-
-func (a *App) emitLogRunner(eventName string, mensagem string) {
-	runtime.EventsEmit(a.ctx, eventName, mensagem)
 }

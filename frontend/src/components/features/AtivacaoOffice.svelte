@@ -2,7 +2,6 @@
   import { onMount, createEventDispatcher } from "svelte";
   import { EventsOn, EventsOff } from "../../../wailsjs/runtime";
   import { AtivarOffice } from "../../../wailsjs/go/main/App";
-
   import FeatureRunner from "./FeatureRunner.svelte";
 
   const dispatch = createEventDispatcher();
@@ -13,7 +12,7 @@
 
   async function iniciar() {
     emExecucao = true;
-    logLines = ["Iniciando ativação..."];
+    logLines = ["Iniciando ativação do Office..."];
     try {
       await AtivarOffice(versaoSelecionada);
     } catch (err) {
@@ -40,7 +39,7 @@
 </script>
 
 <FeatureRunner
-  titulo="Ativação do Office"
+  titulo="Ativação do Microsoft Office"
   descricao="Esta função fechará todos os aplicativos do Office (Word, Excel, etc.) e realizará a ativação utilizando servidores KMS públicos. Requer privilégios de Administrador."
   textoBotao="Iniciar Ativação do Office"
   bind:logLines
