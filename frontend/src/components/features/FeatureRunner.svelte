@@ -14,19 +14,23 @@
 </script>
 
 <FeatureContainer {titulo}>
-  <p class="mt-0 mb-6 opacity-90">{descricao}</p>
+  <div class="flex-grow flex flex-col min-h-0 overflow-y-auto pr-2">
+    <p class="mt-0 mb-6 opacity-90">{descricao}</p>
 
-  <slot></slot>
+    <slot></slot>
 
-  <button
-    class="w-full py-2 text-xl mt-2 font-bold cursor-pointer bg-accent-orange text-dark-blue-bg border-none rounded-lg transition-all duration-200 hover:brightness-110 disabled:bg-gray-600 disabled:cursor-not-allowed"
-    on:click={() => dispatch("start")}
-    disabled={emExecucao}
-  >
-    {emExecucao ? "Executando..." : textoBotao}
-  </button>
+    <button
+      class="w-full p-4 text-xl font-bold cursor-pointer bg-accent-orange text-dark-blue-bg border-none rounded-lg transition-all duration-200 hover:brightness-110 disabled:bg-gray-600 disabled:cursor-not-allowed"
+      on:click={() => dispatch("start")}
+      disabled={emExecucao}
+    >
+      {emExecucao ? "Executando..." : textoBotao}
+    </button>
 
-  <LogPanel {logLines} />
+    <LogPanel {logLines} />
+  </div>
 
-  <BotaoVoltar on:click={() => dispatch("voltar")} />
+  <div class="flex-shrink-0 pt-4">
+    <BotaoVoltar on:click={() => dispatch("voltar")} />
+  </div>
 </FeatureContainer>
