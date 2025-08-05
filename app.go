@@ -23,8 +23,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// --- Variáveis e Structs Globais ---
-
 var compiledPasswordHash string
 
 type TecladoInfo struct {
@@ -55,7 +53,6 @@ type OfficeVersionInfo struct {
 	KMS_Servers     []string
 }
 
-// --- Funções de Inicialização ---
 func init() {
 	if compiledPasswordHash == "" {
 		err := godotenv.Load()
@@ -76,7 +73,6 @@ func NewApp() *App {
 	return &App{senhaHasheada: hashDoEnv}
 }
 
-// --- Métodos Principais da Aplicação ---
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
@@ -140,20 +136,16 @@ func (a *App) VerificarIPDisponivel(ip string) (bool, error) {
 	return err != nil, nil
 }
 
-// MUDANÇA: Lógica para IP dinâmico adicionada
 func (a *App) AlterarIP(interfaceName, novoIP, mascara, gateway string) error {
 	if interfaceName == "" {
 		return errors.New("não foi possível identificar a interface de rede para alteração")
 	}
 
-	// Se o campo de IP estiver vazio, configura para DHCP
 	if novoIP == "" {
 		cmd := fmt.Sprintf(`netsh interface ip set address name="%s" source=dhcp`, interfaceName)
 		_, err := syscmd.RunCommand("", "cmd", "/c", cmd)
 		return err
 	}
-
-	// Lógica original para IP estático
 	disponivel, err := a.VerificarIPDisponivel(novoIP)
 	if err != nil {
 		return fmt.Errorf("erro ao verificar disponibilidade do IP: %v", err)
@@ -167,20 +159,17 @@ func (a *App) AlterarIP(interfaceName, novoIP, mascara, gateway string) error {
 	return err
 }
 
-// MUDANÇA: Lógica para DNS dinâmico adicionada
 func (a *App) AlterarDNS(interfaceName, dnsPrimario, dnsSecundario string) error {
 	if interfaceName == "" {
 		return errors.New("não foi possível identificar a interface de rede para alteração")
 	}
 
-	// Se o campo DNS primário estiver vazio, configura para DHCP
 	if dnsPrimario == "" {
 		cmd := fmt.Sprintf(`netsh interface ip set dns name="%s" source=dhcp`, interfaceName)
 		_, err := syscmd.RunCommand("", "cmd", "/c", cmd)
 		return err
 	}
 
-	// Lógica original para DNS estático
 	if net.ParseIP(dnsPrimario) == nil {
 		return errors.New("DNS primário tem formato inválido")
 	}
@@ -205,7 +194,6 @@ func (a *App) AlterarDNS(interfaceName, dnsPrimario, dnsSecundario string) error
 	return nil
 }
 
-// --- Funções de Layout de Teclado ---
 func (a *App) ObterLayoutsDisponiveis() []TecladoInfo {
 	sort.Slice(tecladosDisponiveis, func(i, j int) bool {
 		return tecladosDisponiveis[i].Nome < tecladosDisponiveis[j].Nome
@@ -228,7 +216,6 @@ func (a *App) AlterarLayoutDeTeclado(tagIdioma string) error {
 	return err
 }
 
-// --- Funções de Ativação e Correção ---
 func (a *App) AtivarWindows(versao string) {
 	go func() {
 		eventName := "log:ativacao:windows"
@@ -243,6 +230,7 @@ func (a *App) AtivarWindows(versao string) {
 		if !ok {
 			a.emitLogRunner(eventName, "ERRO: Versão do Windows inválida.")
 			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO ---")
+			runtime.EventsEmit(a.ctx, "ativacao:windows:finalizado", false)
 			return
 		}
 
@@ -256,8 +244,10 @@ func (a *App) AtivarWindows(versao string) {
 		a.emitLogRunner(eventName, output)
 		if err == nil {
 			a.emitLogRunner(eventName, "--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---")
+			runtime.EventsEmit(a.ctx, "ativacao:windows:finalizado", true)
 		} else {
 			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO ---")
+			runtime.EventsEmit(a.ctx, "ativacao:windows:finalizado", false)
 		}
 	}()
 }
@@ -270,6 +260,7 @@ func (a *App) AtivarOffice(versao string) {
 		if err != nil {
 			a.emitLogRunner(eventName, "ERRO: "+err.Error())
 			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO GERAL ---")
+			runtime.EventsEmit(a.ctx, "ativacao:office:finalizado", false)
 			return
 		}
 		a.emitLogRunner(eventName, "Pasta do Office encontrada em: "+officePath)
@@ -288,7 +279,7 @@ func (a *App) AtivarOffice(versao string) {
 				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
 			},
 			"2024": {
-				ProdKey:         "XJ2XN-FW8RK-P4HMP-DKDBV-GCVGB",
+				ProdKey:         "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
 				UnPKeys:         []string{"6F7TH"},
 				LicensePatterns: []string{`ProPlus2024VL_KMS.*\.xrm-ms`},
 				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
@@ -299,6 +290,7 @@ func (a *App) AtivarOffice(versao string) {
 		if !ok {
 			a.emitLogRunner(eventName, "ERRO: Versão do Office inválida.")
 			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO ---")
+			runtime.EventsEmit(a.ctx, "ativacao:office:finalizado", false)
 			return
 		}
 
@@ -329,6 +321,7 @@ func (a *App) AtivarOffice(versao string) {
 			if err == nil && (strings.Contains(strings.ToLower(output), "product activation successful") || strings.Contains(strings.ToLower(output), "ativado com êxito")) {
 				a.emitLogRunner(eventName, "--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---")
 				activationSuccessful = true
+				runtime.EventsEmit(a.ctx, "ativacao:office:finalizado", true)
 				break
 			} else {
 				a.emitLogRunner(eventName, fmt.Sprintf("--- Falha na ativação com %s. Tentando próximo... ---", server))
@@ -337,6 +330,7 @@ func (a *App) AtivarOffice(versao string) {
 
 		if !activationSuccessful {
 			a.emitLogRunner(eventName, "--- FALHA NA ATIVAÇÃO: NENHUM SERVIDOR KMS FUNCIONOU. ---")
+			runtime.EventsEmit(a.ctx, "ativacao:office:finalizado", false)
 		}
 	}()
 }
@@ -403,7 +397,6 @@ func (a *App) CorrigirCompartilhamentoWindows() {
 	}()
 }
 
-// --- Funções Auxiliares ---
 func (a *App) emitLogRunner(eventName string, mensagem string) {
 	runtime.EventsEmit(a.ctx, eventName, mensagem)
 }
