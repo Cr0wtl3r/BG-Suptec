@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -101,23 +102,33 @@ func (a *App) ExecutarComando(comando string, args []string) (string, error) {
 	return output, nil
 }
 
-func (a *App) ReiniciarComputador() (string, error) {
-	return syscmd.RunCommand("", "shutdown", "/r", "/t", "0")
+func (a *App) ReiniciarComputador() error {
+	cmd := exec.Command("shutdown", "/r", "/t", "0")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+
+	err := cmd.Start()
+	if err != nil {
+		return fmt.Errorf("falha ao iniciar o comando de reinicialização: %v", err)
+	}
+
+	return nil
 }
 
-// --- Funções de Sistema e Rede ---
 func (a *App) ObterInformacoesSistema() (sysinfo.InfoSistema, error) {
 	return sysinfo.GetInfo()
 }
 
-func (a *App) AlterarNomeComputador(novoNome string) error {
+func (a *App) AlterarNomeComputador(novoNome string) (bool, error) {
 	if len(novoNome) == 0 || len(novoNome) > 15 {
-		return errors.New("nome do computador deve ter entre 1 e 15 caracteres")
+		return false, errors.New("nome do computador deve ter entre 1 e 15 caracteres")
 	}
 	novoNome = strings.ReplaceAll(novoNome, " ", "")
 	cmd := fmt.Sprintf("Rename-Computer -NewName %s -Force -PassThru", novoNome)
 	_, err := syscmd.RunCommand("", "powershell", "-NoProfile", "-Command", cmd)
-	return err
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (a *App) VerificarIPDisponivel(ip string) (bool, error) {
@@ -190,7 +201,7 @@ func (a *App) AlterarDNS(interfaceName, dnsPrimario, dnsSecundario string) error
 			return fmt.Errorf("erro ao configurar DNS secundário: %v", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -239,7 +250,7 @@ func (a *App) AtivarWindows(versao string) {
 
 		a.runCommandAndLog(eventName, "Instalando chave do produto (GVLK)...", "cscript", slmgrPath, "/ipk", key)
 		a.runCommandAndLog(eventName, "Definindo servidor KMS: kms.msguides.com...", "cscript", slmgrPath, "/skms", "kms.msguides.com")
-		
+
 		a.emitLogRunner(eventName, "--> Tentando ativar...")
 		output, err := syscmd.RunCommand("", "cscript", slmgrPath, "/ato")
 		a.emitLogRunner(eventName, output)
@@ -310,7 +321,7 @@ func (a *App) AtivarOffice(versao string) {
 		activationSuccessful := false
 		for _, server := range info.KMS_Servers {
 			a.runCommandAndLog(eventName, fmt.Sprintf("Definindo servidor KMS: %s...", server), "cscript", osppPath, "/sethst:"+server)
-			
+
 			a.emitLogRunner(eventName, fmt.Sprintf("--> Tentando ativar com %s...", server))
 			output, err := syscmd.RunCommand(officePath, "cscript", osppPath, "/act")
 			a.emitLogRunner(eventName, output)
@@ -330,7 +341,6 @@ func (a *App) AtivarOffice(versao string) {
 	}()
 }
 
-
 func (a *App) AjustarHoraFormatacao() {
 	go func() {
 		eventName := "log:ajustar:hora:formatacao"
@@ -345,7 +355,7 @@ func (a *App) AjustarHoraFormatacao() {
 		now := time.Now().Unix()
 		installDate := fmt.Sprintf("%d", now)
 		a.runCommandAndLog(eventName, "Ajustando InstallDate no registro para o timestamp atual...", "reg", "add", `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "/v", "InstallDate", "/t", "REG_DWORD", "/d", installDate, "/f")
-		
+
 		a.emitLogRunner(eventName, "--- AJUSTE DE HORA CONCLUÍDO ---")
 	}()
 }
@@ -393,7 +403,6 @@ func (a *App) CorrigirCompartilhamentoWindows() {
 	}()
 }
 
-
 // --- Funções Auxiliares ---
 func (a *App) emitLogRunner(eventName string, mensagem string) {
 	runtime.EventsEmit(a.ctx, eventName, mensagem)
@@ -429,7 +438,7 @@ func (a *App) instalarLicencasOffice(eventName, officePath string, patterns []st
 		a.emitLogRunner(eventName, "Aviso: Diretório de licenças KMS não encontrado. Pulando esta etapa.")
 		return
 	}
-	
+
 	files, err := os.ReadDir(foundLicensesDir)
 	if err != nil {
 		a.emitLogRunner(eventName, fmt.Sprintf("Erro ao ler diretório de licenças %s: %v", foundLicensesDir, err))
@@ -469,7 +478,7 @@ func findOfficePathGo() (string, error) {
 
 func (a *App) ExecutarComandoSimples(titulo string, comando string, args ...string) {
 	go func() {
-		eventName := "log:runner" 
+		eventName := "log:runner"
 		a.emitLogRunner(eventName, "Iniciando tarefa: "+titulo)
 		time.Sleep(100 * time.Millisecond)
 

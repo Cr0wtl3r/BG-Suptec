@@ -3,11 +3,13 @@
   import {
     ObterInformacoesSistema,
     AlterarIP,
-    AlterarNomeComputador,
+    AlterarNomeComputador, // <-- Retorna (bool, error) agora
     AlterarDNS,
+    ReiniciarComputador, // <-- Importar
   } from "../../../wailsjs/go/main/App";
   import Accordion from "../shared/Accordion.svelte";
   import EditableField from "../shared/EditableField.svelte";
+  import Modal from "../shared/Modal.svelte"; // 1. IMPORTAR O NOVO MODAL
 
   // ... (toda a lógica do script até as funções de salvar) ...
   let info: InfoSistema | null = null;
@@ -72,11 +74,14 @@
     dnsSecundario: string;
     interfaceAtiva: string;
   };
-  type ModalData = {
-    tipo: "sucesso" | "erro";
-    titulo: string;
-    mensagem: string;
+  type ModalInfo = {
     visible: boolean;
+    tipo?: "sucesso" | "erro" | "aviso";
+    titulo?: string;
+    mensagem?: string;
+    textoConfirmar?: string | null;
+    textoCancelar?: string;
+    onConfirm?: () => void;
   };
   let editandoIP = false;
   let editandoDNS = false;
@@ -88,12 +93,7 @@
   let salvandoNome = false;
   let salvandoIP = false;
   let salvandoDNS = false;
-  let modal: ModalData = {
-    tipo: "sucesso",
-    titulo: "",
-    mensagem: "",
-    visible: false,
-  };
+  let modal: ModalInfo = { visible: false };
   let isInfoSistemaOpen = false;
   let isInfoRedeOpen = false;
   let isInfoDNSOpen = false;
@@ -123,16 +123,13 @@
       campoBuscaElement?.focus();
     }
   };
-  function mostrarModal(
-    tipo: "sucesso" | "erro",
-    titulo: string,
-    mensagem: string,
-  ) {
-    modal = { tipo, titulo, mensagem, visible: true };
+  function mostrarModal(info: Omit<ModalInfo, "visible">) {
+    modal = { ...info, visible: true };
   }
   function fecharModal() {
-    modal.visible = false;
+    modal = { visible: false };
   }
+
   async function carregarInformacoes() {
     try {
       info = await ObterInformacoesSistema();
@@ -167,51 +164,77 @@
   async function handleSalvarNome(event: CustomEvent) {
     const novoNome = event.detail.trim();
     if (!novoNome) {
-      mostrarModal(
-        "erro",
-        "Erro de Validação",
-        "Nome do computador não pode estar vazio!",
-      );
+      mostrarModal({
+        tipo: "erro",
+        titulo: "Erro de Validação",
+        mensagem: "Nome do computador não pode estar vazio!",
+      });
       return;
     }
     salvandoNome = true;
     try {
-      await AlterarNomeComputador(novoNome);
-      mostrarModal(
-        "sucesso",
-        "Sucesso!",
-        "Nome do computador alterado! Reinicie o computador para aplicar as mudanças.",
-      );
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const precisaReiniciar = await AlterarNomeComputador(novoNome);
       await carregarInformacoes();
+
+      if (precisaReiniciar) {
+        mostrarModal({
+          tipo: "sucesso",
+          titulo: "Sucesso!",
+          mensagem:
+            "O nome do computador foi alterado. É necessário reiniciar para que a mudança tenha efeito completo. Deseja reiniciar agora?",
+          textoConfirmar: "Reiniciar Agora",
+          textoCancelar: "Depois",
+          onConfirm: async () => {
+            try {
+              await ReiniciarComputador();
+            } catch (err) {
+              mostrarModal({
+                tipo: "erro",
+                titulo: "Erro",
+                mensagem: `Não foi possível reiniciar: ${err}`,
+              });
+            }
+            fecharModal();
+          },
+        });
+      } else {
+        mostrarModal({
+          tipo: "sucesso",
+          titulo: "Sucesso!",
+          mensagem: "Nome do computador alterado!",
+        });
+      }
     } catch (e) {
-      mostrarModal("erro", "Erro", `Erro ao alterar nome: ${e}`);
+      mostrarModal({
+        tipo: "erro",
+        titulo: "Erro",
+        mensagem: `Erro ao alterar nome: ${e}`,
+      });
     }
     salvandoNome = false;
   }
 
-  // MUDANÇA: Lógica de validação ajustada
   async function salvarIP() {
     const ip = tempEnderecoIP.trim();
     const mascara = tempMascaraRede.trim();
     const gateway = tempGatewayPadrao.trim();
 
-    // Se o IP for preenchido, os outros campos também devem ser.
     if (ip !== "" && (mascara === "" || gateway === "")) {
-      mostrarModal(
-        "erro",
-        "Erro de Validação",
-        "Para definir um IP estático, todos os campos (IP, Máscara e Gateway) devem ser preenchidos.",
-      );
+      mostrarModal({
+        tipo: "erro",
+        titulo: "Erro de Validação",
+        mensagem:
+          "Para definir um IP estático, todos os campos (IP, Máscara e Gateway) devem ser preenchidos.",
+      });
       return;
     }
 
     if (!info?.interfaceAtiva) {
-      mostrarModal(
-        "erro",
-        "Erro de Sistema",
-        "Interface de rede não encontrada. Tente recarregar.",
-      );
+      mostrarModal({
+        tipo: "erro",
+        titulo: "Erro de Sistema",
+        mensagem: "Interface de rede não encontrada. Tente recarregar.",
+      });
       return;
     }
 
@@ -223,13 +246,17 @@
           ? "Configurações de rede definidas para DHCP (dinâmico)!"
           : "Configurações de rede alteradas com sucesso!";
 
-      mostrarModal("sucesso", "Sucesso!", mensagem);
+      mostrarModal({ tipo: "sucesso", titulo: "Sucesso!", mensagem: mensagem });
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
       await carregarInformacoes();
       editandoIP = false;
     } catch (e) {
-      mostrarModal("erro", "Erro", `Erro ao alterar IP: ${e}`);
+      mostrarModal({
+        tipo: "erro",
+        titulo: "Erro",
+        mensagem: `Erro ao alterar IP: ${e}`,
+      });
     }
     salvandoIP = false;
   }
@@ -240,11 +267,11 @@
     const secundario = tempDNSSecundario.trim();
 
     if (!info?.interfaceAtiva) {
-      mostrarModal(
-        "erro",
-        "Erro de Sistema",
-        "Interface de rede não encontrada. Tente recarregar.",
-      );
+      mostrarModal({
+        tipo: "erro",
+        titulo: "Erro de Sistema",
+        mensagem: "Interface de rede não encontrada. Tente recarregar.",
+      });
       return;
     }
 
@@ -256,13 +283,17 @@
           ? "Servidores DNS definidos para obter via DHCP (automático)!"
           : "Servidores DNS alterados com sucesso!";
 
-      mostrarModal("sucesso", "Sucesso!", mensagem);
+      mostrarModal({ tipo: "sucesso", titulo: "Sucesso!", mensagem: mensagem });
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
       await carregarInformacoes();
       editandoDNS = false;
     } catch (e) {
-      mostrarModal("erro", "Erro", `Erro ao alterar DNS: ${e}`);
+      mostrarModal({
+        tipo: "erro",
+        titulo: "Erro",
+        mensagem: `Erro ao alterar DNS: ${e}`,
+      });
     }
     salvandoDNS = false;
   }
@@ -633,103 +664,17 @@
   </div>
 </div>
 {#if modal.visible}
-  <div
-    class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-[1000] animate-modalFadeIn"
-    on:click={fecharModal}
-    on:keydown={(e) => {
-      if (e.key === "Escape") fecharModal();
+  <Modal
+    tipo={modal.tipo}
+    titulo={modal.titulo || ""}
+    mensagem={modal.mensagem || ""}
+    textoConfirmar={modal.textoConfirmar}
+    textoCancelar={modal.textoCancelar}
+    on:confirmar={() => {
+      if (modal.onConfirm) modal.onConfirm();
     }}
-    role="button"
-    tabindex="0"
-    aria-label="Fechar modal"
-  >
-    <div
-      class="bg-dark-blue-light bg-opacity-95 border border-gray-700 rounded-xl min-w-[400px] max-w-lg max-h-[80vh] overflow-hidden animate-modalSlideIn shadow-2xl"
-      on:click|stopPropagation
-      on:keydown={(e) => {
-        if (e.key === "Escape") fecharModal();
-      }}
-      role="dialog"
-      tabindex="0"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-      aria-describedby="modal-message"
-    >
-      <div
-        class="flex items-center p-5 gap-3 border-b border-gray-800
-        {modal.tipo === 'sucesso'
-          ? 'bg-green-700/20 border-green-700/30'
-          : 'bg-red-700/20 border-red-700/30'}"
-      >
-        <div
-          class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
-          {modal.tipo === 'sucesso'
-            ? 'bg-green-700/20 text-green-500'
-            : 'bg-red-700/20 text-red-500'}"
-        >
-          {#if modal.tipo === "sucesso"}
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="3"
-            >
-              <polyline points="20,6 9,17 4,12" />
-            </svg>
-          {:else}
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="3"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="15" y1="9" x2="9" y2="15" />
-              <line x1="9" y1="9" x2="15" y2="15" />
-            </svg>
-          {/if}
-        </div>
-        <h3
-          id="modal-title"
-          class="flex-grow m-0 text-lg font-semibold text-text-light"
-        >
-          {modal.titulo}
-        </h3>
-        <button
-          class="bg-transparent border-none text-gray-400 cursor-pointer p-1 rounded-md transition-all duration-200 flex-shrink-0 hover:bg-white hover:bg-opacity-10 hover:text-white"
-          on:click={fecharModal}
-          aria-label="Fechar"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
-      <div id="modal-message" class="p-5">
-        <p class="m-0 text-gray-200 leading-normal text-base">
-          {modal.mensagem}
-        </p>
-      </div>
-      <div class="px-5 pb-5 flex justify-end">
-        <button
-          class="bg-primary-purple text-white border-none py-2.5 px-5 rounded-md text-base font-medium cursor-pointer transition-all duration-200 hover:bg-primary-purple-dark hover:-translate-y-px"
-          on:click={fecharModal}>Entendi</button
-        >
-      </div>
-    </div>
-  </div>
+    on:cancelar={fecharModal}
+  />
 {/if}
 
 <style>
@@ -764,12 +709,5 @@
       opacity: 1;
       transform: translateY(0) scale(1);
     }
-  }
-
-  .animate-modalFadeIn {
-    animation: modalFadeIn 0.2s ease-out;
-  }
-  .animate-modalSlideIn {
-    animation: modalSlideIn 0.3s ease-out;
   }
 </style>

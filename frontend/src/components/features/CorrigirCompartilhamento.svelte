@@ -1,23 +1,24 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
-  import { EventsOn, EventsOff } from "../../../wailsjs/runtime/runtime";
+  import { EventsOn, EventsOff } from "../../../wailsjs/runtime";
   import {
     CorrigirCompartilhamentoWindows,
     ReiniciarComputador,
   } from "../../../wailsjs/go/main/App";
   import FeatureRunner from "./FeatureRunner.svelte";
+  import Modal from "../shared/Modal.svelte";
 
   const dispatch = createEventDispatcher();
   let logLines: string[] = ["Aguardando início..."];
   let emExecucao = false;
-  let operacaoConcluida = false; // Controla se a operação terminou
+  let mostrarModalReinicio = false;
 
   async function iniciar() {
     emExecucao = true;
-    operacaoConcluida = false;
-    logLines = []; // Limpa os logs
+    mostrarModalReinicio = false;
+    logLines = [];
     try {
-      await CorrigirCompartilhamentoWindows(); // Chama a função principal do Go
+      CorrigirCompartilhamentoWindows();
     } catch (err) {
       adicionarLog(`ERRO CRÍTICO: ${err}`);
       emExecucao = false;
@@ -32,20 +33,11 @@
     }
   }
 
-  function handleReboot() {
-    logLines = [...logLines, "Comando de reinicialização enviado..."];
-    ReiniciarComputador().catch((err) => {
-      logLines = [...logLines, `Falha ao reiniciar: ${err}`];
-    });
-  }
-
   onMount(() => {
     const eventName = "log:compartilhamento";
     EventsOn(eventName, adicionarLog);
-
-    // Ouve o evento especial para mostrar os botões
     EventsOn("compartilhamento:finalizado", () => {
-      operacaoConcluida = true;
+      mostrarModalReinicio = true;
     });
 
     return () => {
@@ -63,34 +55,25 @@
   bind:emExecucao
   on:start={iniciar}
   on:voltar={() => dispatch("voltar")}
->
-  {#if operacaoConcluida}
-    <div
-      class="mt-4 p-4 border-t-2 border-accent-orange/30 text-center animate-fadeIn"
-    >
-      <p class="font-bold mb-3">
-        Operação concluída. Uma reinicialização é recomendada.
-      </p>
-      <button
-        class="px-5 py-2 text-base font-semibold cursor-pointer bg-accent-orange text-dark-blue-bg border-none rounded-lg transition-all duration-200 hover:brightness-110"
-        on:click={handleReboot}
-      >
-        Reiniciar Agora
-      </button>
-    </div>
-  {/if}
-</FeatureRunner>
+/>
 
-<style>
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  .animate-fadeIn {
-    animation: fadeIn 0.5s ease-out;
-  }
-</style>
+{#if mostrarModalReinicio}
+  <Modal
+    tipo="aviso"
+    titulo="Reinicialização Recomendada"
+    mensagem="As correções foram aplicadas com sucesso..."
+    textoConfirmar="Reiniciar Agora"
+    textoCancelar="Depois"
+    on:confirmar={async () => {
+      try {
+        logLines = [...logLines, "[INFO] Comando de reinicialização enviado."];
+        await ReiniciarComputador();
+        mostrarModalReinicio = false;
+      } catch (err) {
+        logLines = [...logLines, `[ERRO] Não foi possível reiniciar: ${err}`];
+        mostrarModalReinicio = false;
+      }
+    }}
+    on:cancelar={() => (mostrarModalReinicio = false)}
+  />
+{/if}
