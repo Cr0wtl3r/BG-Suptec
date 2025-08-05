@@ -24,16 +24,34 @@
   function adicionarLog(mensagem: string) {
     const timestamp = new Date().toLocaleTimeString("pt-BR");
     logLines = [...logLines, `[${timestamp}] ${mensagem}`];
-    if (mensagem.includes("---")) {
+
+    const mensagemFinal =
+      mensagem.includes("--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---") ||
+      mensagem.includes(
+        "--- FALHA NA ATIVAÇÃO: NENHUM SERVIDOR KMS FUNCIONOU. ---",
+      ) ||
+      mensagem.includes("--- FALHA NA ATIVAÇÃO GERAL ---") ||
+      mensagem.includes("--- FALHA NA ATIVAÇÃO ---");
+
+    if (mensagemFinal) {
       emExecucao = false;
     }
   }
 
+  function onOfficeProcessoFinalizado() {
+    emExecucao = false;
+  }
+
   onMount(() => {
     const eventName = "log:ativacao:office";
+    const finalizadoEventName = "ativacao:office:finalizado";
+
     EventsOn(eventName, adicionarLog);
+    EventsOn(finalizadoEventName, onOfficeProcessoFinalizado);
+
     return () => {
       EventsOff(eventName);
+      EventsOff(finalizadoEventName);
     };
   });
 </script>

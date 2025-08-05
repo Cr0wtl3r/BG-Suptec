@@ -270,19 +270,19 @@ func (a *App) AtivarOffice(versao string) {
 				ProdKey:         "XQNVK-8JYDB-WJ9W3-YJ8YR-WFG99",
 				UnPKeys:         []string{"BTDRB", "KHGM9", "CPQVG"},
 				LicensePatterns: []string{`proplusvl_kms.*\.xrm-ms`},
-				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
+				KMS_Servers:     []string{"23.226.136.46", "107.173.230.24", "kms8.msguides.com", "kms9.msguides.com"},
 			},
 			"2021": {
 				ProdKey:         "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
 				UnPKeys:         []string{"6F7TH"},
 				LicensePatterns: []string{`ProPlus2021VL_KMS.*\.xrm-ms`},
-				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
+				KMS_Servers:     []string{"23.226.136.46", "107.173.230.24", "kms8.msguides.com", "kms9.msguides.com"},
 			},
 			"2024": {
-				ProdKey:         "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
+				ProdKey:         "XJ2XN-FW8RK-P4HMP-DKDBV-GCVGB",
 				UnPKeys:         []string{"6F7TH"},
 				LicensePatterns: []string{`ProPlus2024VL_KMS.*\.xrm-ms`},
-				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
+				KMS_Servers:     []string{"23.226.136.46", "107.173.230.24", "kms8.msguides.com", "kms9.msguides.com"},
 			},
 		}
 

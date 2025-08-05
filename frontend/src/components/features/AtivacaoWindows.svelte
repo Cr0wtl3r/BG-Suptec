@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from "svelte"; // Adicionado createEventDispatcher
+  import { onMount, createEventDispatcher } from "svelte";
   import { EventsOn, EventsOff } from "../../../wailsjs/runtime";
   import { AtivarWindows } from "../../../wailsjs/go/main/App";
   import FeatureRunner from "./FeatureRunner.svelte";
 
-  const dispatch = createEventDispatcher(); // Adicionada a instância do dispatcher
+  const dispatch = createEventDispatcher();
 
   let logLines: string[] = ["Aguardando início..."];
   let emExecucao = false;
@@ -12,7 +12,7 @@
 
   async function iniciar() {
     emExecucao = true;
-    logLines = ["Iniciando ativação do Windows..."]; // Mensagem inicial melhorada
+    logLines = ["Iniciando ativação do Windows..."];
     try {
       await AtivarWindows(versaoSelecionada);
     } catch (err) {
@@ -24,16 +24,30 @@
   function adicionarLog(mensagem: string) {
     const timestamp = new Date().toLocaleTimeString("pt-BR");
     logLines = [...logLines, `[${timestamp}] ${mensagem}`];
-    if (mensagem.includes("---")) {
+
+    const mensagemFinal =
+      mensagem.includes("--- ATIVAÇÃO CONCLUÍDA COM SUCESSO ---") ||
+      mensagem.includes("--- FALHA NA ATIVAÇÃO ---");
+
+    if (mensagemFinal) {
       emExecucao = false;
     }
   }
 
+  function onWindowsProcessoFinalizado() {
+    emExecucao = false;
+  }
+
   onMount(() => {
     const eventName = "log:ativacao:windows";
+    const finalizadoEventName = "ativacao:windows:finalizado";
+
     EventsOn(eventName, adicionarLog);
+    EventsOn(finalizadoEventName, onWindowsProcessoFinalizado);
+
     return () => {
       EventsOff(eventName);
+      EventsOff(finalizadoEventName);
     };
   });
 </script>
