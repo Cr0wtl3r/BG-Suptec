@@ -288,7 +288,7 @@ func (a *App) AtivarOffice(versao string) {
 				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
 			},
 			"2024": {
-				ProdKey:         "FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH",
+				ProdKey:         "XJ2XN-FW8RK-P4HMP-DKDBV-GCVGB",
 				UnPKeys:         []string{"6F7TH"},
 				LicensePatterns: []string{`ProPlus2024VL_KMS.*\.xrm-ms`},
 				KMS_Servers:     []string{"kms8.msguides.com", "kms9.msguides.com"},
