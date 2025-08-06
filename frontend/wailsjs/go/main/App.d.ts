@@ -17,11 +17,17 @@ export function AtivarOffice(arg1:string):Promise<void>;
 
 export function AtivarWindows(arg1:string):Promise<void>;
 
+export function BloquearProgramasFirewall(arg1:Array<string>):Promise<void>;
+
 export function CorrigirCompartilhamentoWindows():Promise<void>;
+
+export function DesbloquearProgramasFirewall(arg1:Array<string>):Promise<void>;
 
 export function ExecutarComando(arg1:string,arg2:Array<string>):Promise<string>;
 
 export function ExecutarComandoSimples(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
+
+export function ListarExecutaveis(arg1:string):Promise<Array<string>>;
 
 export function Login(arg1:string):Promise<boolean>;
 
@@ -31,6 +37,12 @@ export function ObterLayoutAtivo():Promise<string>;
 
 export function ObterLayoutsDisponiveis():Promise<Array<main.TecladoInfo>>;
 
+export function ObterProgramasInstalados():Promise<Array<main.ProgramaInfo>>;
+
 export function ReiniciarComputador():Promise<void>;
 
+export function SelecionarArquivoExe():Promise<string>;
+
 export function VerificarIPDisponivel(arg1:string):Promise<boolean>;
+
+export function VerificarStatusFirewall(arg1:Array<string>):Promise<Record<string, boolean>>;

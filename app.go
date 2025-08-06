@@ -21,6 +21,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"golang.org/x/sys/windows/registry"
 )
 
 var compiledPasswordHash string
@@ -44,6 +45,11 @@ var tecladosDisponiveis = []TecladoInfo{
 type App struct {
 	ctx           context.Context
 	senhaHasheada string
+}
+
+type ProgramaInfo struct {
+	Nome    string `json:"nome"`
+	Caminho string `json:"caminho"`
 }
 
 type OfficeVersionInfo struct {
@@ -484,4 +490,118 @@ func (a *App) ExecutarComandoSimples(titulo string, comando string, args ...stri
 			a.emitLogRunner(eventName, "--- TAREFA CONCLUÍDA COM SUCESSO ---")
 		}
 	}()
+}
+
+func (a *App) ObterProgramasInstalados() ([]ProgramaInfo, error) {
+	var programas []ProgramaInfo
+	keys := []string{
+		`SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall`,
+		`SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall`,
+	}
+
+	for _, keyPath := range keys {
+		key, err := registry.OpenKey(registry.LOCAL_MACHINE, keyPath, registry.ENUMERATE_SUB_KEYS)
+		if err != nil {
+			continue
+		}
+		defer key.Close()
+
+		subKeyNames, err := key.ReadSubKeyNames(-1)
+		if err != nil {
+			continue
+		}
+
+		for _, subKeyName := range subKeyNames {
+			subKey, err := registry.OpenKey(key, subKeyName, registry.QUERY_VALUE)
+			if err != nil {
+				continue
+			}
+			defer subKey.Close()
+
+			displayName, _, errName := subKey.GetStringValue("DisplayName")
+			installLocation, _, errLoc := subKey.GetStringValue("InstallLocation")
+
+			if errName == nil && errLoc == nil && displayName != "" && installLocation != "" {
+				programas = append(programas, ProgramaInfo{Nome: displayName, Caminho: installLocation})
+			}
+		}
+	}
+
+	sort.Slice(programas, func(i, j int) bool {
+		return programas[i].Nome < programas[j].Nome
+	})
+
+	return programas, nil
+}
+
+func (a *App) ListarExecutaveis(caminhoDaPasta string) ([]string, error) {
+	var executaveis []string
+	err := filepath.Walk(caminhoDaPasta, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(strings.ToLower(info.Name()), ".exe") {
+			executaveis = append(executaveis, path)
+		}
+		return nil
+	})
+	return executaveis, err
+}
+
+func (a *App) obterNomeRegra(caminhoExecutavel string) string {
+	return fmt.Sprintf("[BG-SupTec] Bloqueio - %s", filepath.Base(caminhoExecutavel))
+}
+
+func (a *App) VerificarStatusFirewall(caminhosExecutaveis []string) (map[string]bool, error) {
+	status := make(map[string]bool)
+	for _, caminho := range caminhosExecutaveis {
+		nomeRegra := a.obterNomeRegra(caminho)
+		_, err := syscmd.RunCommand("", "netsh", "advfirewall", "firewall", "show", "rule", "name="+nomeRegra)
+		status[caminho] = err == nil
+	}
+	return status, nil
+}
+
+func (a *App) BloquearProgramasFirewall(caminhosExecutaveis []string) error {
+	for _, caminho := range caminhosExecutaveis {
+		nomeRegra := a.obterNomeRegra(caminho)
+		syscmd.RunCommand("", "netsh", "advfirewall", "firewall", "delete", "rule", "name="+nomeRegra)
+
+		_, errIn := syscmd.RunCommand("", "netsh", "advfirewall", "firewall", "add", "rule", "name="+nomeRegra, "dir=in", "action=block", "program="+caminho, "enable=yes")
+		if errIn != nil {
+			return fmt.Errorf("falha ao bloquear entrada para %s: %v", filepath.Base(caminho), errIn)
+		}
+
+		_, errOut := syscmd.RunCommand("", "netsh", "advfirewall", "firewall", "add", "rule", "name="+nomeRegra, "dir=out", "action=block", "program="+caminho, "enable=yes")
+		if errOut != nil {
+			return fmt.Errorf("falha ao bloquear saída para %s: %v", filepath.Base(caminho), errOut)
+		}
+	}
+	return nil
+}
+
+func (a *App) DesbloquearProgramasFirewall(caminhosExecutaveis []string) error {
+	for _, caminho := range caminhosExecutaveis {
+		nomeRegra := a.obterNomeRegra(caminho)
+		_, err := syscmd.RunCommand("", "netsh", "advfirewall", "firewall", "delete", "rule", "name="+nomeRegra)
+		if err != nil {
+			if !strings.Contains(err.Error(), "No rules match the specified criteria") {
+				return fmt.Errorf("falha ao desbloquear %s: %v", filepath.Base(caminho), err)
+			}
+		}
+	}
+	return nil
+}
+
+func (a *App) SelecionarArquivoExe() (string, error) {
+	arquivo, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Selecionar Executável",
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "Executáveis (*.exe)",
+				Pattern:     "*.exe",
+			},
+		},
+	})
+	return arquivo, err
 }

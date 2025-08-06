@@ -30,8 +30,16 @@ export function AtivarWindows(arg1) {
   return window['go']['main']['App']['AtivarWindows'](arg1);
 }
 
+export function BloquearProgramasFirewall(arg1) {
+  return window['go']['main']['App']['BloquearProgramasFirewall'](arg1);
+}
+
 export function CorrigirCompartilhamentoWindows() {
   return window['go']['main']['App']['CorrigirCompartilhamentoWindows']();
+}
+
+export function DesbloquearProgramasFirewall(arg1) {
+  return window['go']['main']['App']['DesbloquearProgramasFirewall'](arg1);
 }
 
 export function ExecutarComando(arg1, arg2) {
@@ -40,6 +48,10 @@ export function ExecutarComando(arg1, arg2) {
 
 export function ExecutarComandoSimples(arg1, arg2, arg3) {
   return window['go']['main']['App']['ExecutarComandoSimples'](arg1, arg2, arg3);
+}
+
+export function ListarExecutaveis(arg1) {
+  return window['go']['main']['App']['ListarExecutaveis'](arg1);
 }
 
 export function Login(arg1) {
@@ -58,10 +70,22 @@ export function ObterLayoutsDisponiveis() {
   return window['go']['main']['App']['ObterLayoutsDisponiveis']();
 }
 
+export function ObterProgramasInstalados() {
+  return window['go']['main']['App']['ObterProgramasInstalados']();
+}
+
 export function ReiniciarComputador() {
   return window['go']['main']['App']['ReiniciarComputador']();
 }
 
+export function SelecionarArquivoExe() {
+  return window['go']['main']['App']['SelecionarArquivoExe']();
+}
+
 export function VerificarIPDisponivel(arg1) {
   return window['go']['main']['App']['VerificarIPDisponivel'](arg1);
+}
+
+export function VerificarStatusFirewall(arg1) {
+  return window['go']['main']['App']['VerificarStatusFirewall'](arg1);
 }

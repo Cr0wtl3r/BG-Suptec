@@ -10,6 +10,7 @@
   import CorrigirCompartilhamento from "./features/CorrigirCompartilhamento.svelte";
   import AlterarLayoutTeclado from "./features/AlterarLayoutTeclado.svelte";
   import FeatureRunner from "./features/FeatureRunner.svelte";
+  import BloqueadorFirewall from "./features/BloqueadorFirewall.svelte";
 
   export let visao;
 
@@ -41,6 +42,8 @@
     <AjustarHoraFormatacao on:voltar={handleVoltar} />
   {:else if visao === "Alterar Layout do Teclado"}
     <AlterarLayoutTeclado on:voltar={handleVoltar} />
+  {:else if visao === "Bloquear Programas no Firewall"}
+    <BloqueadorFirewall on:voltar={handleVoltar} />
   {:else}
     <FeatureRunner
       titulo={visao}

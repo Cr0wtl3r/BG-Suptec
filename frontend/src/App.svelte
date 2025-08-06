@@ -45,6 +45,7 @@
         "Ativar Windows Defender",
         "Desativar Windows Defender",
         "Ativar Proteção do Sistema",
+        "Bloquear Programas no Firewall",
         "Desativar Smart Screen",
       ],
     },

@@ -1,5 +1,19 @@
 export namespace main {
 	
+	export class ProgramaInfo {
+	    nome: string;
+	    caminho: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProgramaInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.nome = source["nome"];
+	        this.caminho = source["caminho"];
+	    }
+	}
 	export class TecladoInfo {
 	    id: string;
 	    nome: string;
