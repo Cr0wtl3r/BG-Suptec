@@ -96,7 +96,7 @@
 <FeatureContainer titulo="Alterar Layout do Teclado">
   <div class="flex-grow min-h-0 overflow-y-auto pr-2">
     <div class="space-y-6">
-      <div class="p-4 bg-dark-blue-bg/50 rounded-lg text-center">
+      <div class="p-1 bg-dark-blue-bg/50 rounded-lg text-center">
         <h3 class="text-sm uppercase opacity-70 mb-1">
           Layout do Teclado Ativo no Sistema
         </h3>
