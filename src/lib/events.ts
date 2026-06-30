@@ -11,4 +11,6 @@ export const EVENTOS = {
   logAjustarHoraFormatacao: "log:ajustar:hora:formatacao",
   logCompartilhamento: "log:compartilhamento",
   compartilhamentoFinalizado: "compartilhamento:finalizado",
+  logAtivarProtecao: "log:ativar:protecao",
+  ativarProtecaoFinalizado: "ativar:protecao:finalizado",
 } as const;

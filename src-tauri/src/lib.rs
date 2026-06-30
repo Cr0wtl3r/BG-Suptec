@@ -53,6 +53,7 @@ pub fn run() {
             commands::maintenance::limpar_spool_impressao,
             commands::maintenance::desativar_hibernacao,
             commands::security::corrigir_compartilhamento,
+            commands::security::ativar_protecao_sistema,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

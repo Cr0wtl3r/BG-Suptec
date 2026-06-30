@@ -164,8 +164,8 @@ Mova todo o conteúdo "legado" para uma pasta legacy_code e começe a construir 
 
 ### Slice 10: Ativar Proteção do Sistema
 
-- [ ] **10.1** Escrever teste: `enable_system_protection()` chama `Enable-ComputerRestore -Drive 'C:'` → Verify: teste passa
-- [ ] **10.2** Implementar + criar `AtivarProtecaoSistema.tsx` → Verify: funciona com log correto (corrigir bug de event name do atual)
+- [x] **10.1** Escrever teste: `enable_system_protection()` chama `Enable-ComputerRestore -Drive 'C:'` → Verify: teste passa
+- [x] **10.2** Implementar + criar `AtivarProtecaoSistema.tsx` → Verify: funciona com log correto (corrigir bug de event name do atual)
 
 **Done When:** Proteção do sistema ativada com log visível (bug atual corrigido).
 

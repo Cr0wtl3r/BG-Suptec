@@ -161,6 +161,55 @@ pub async fn fix_network_sharing(
     on_log("É altamente recomendável reiniciar o computador.");
 }
 
+/// Enables System Restore on drive `C:` and caps its shadow-storage usage
+/// at 5% — this feature does not exist in the legacy Go app (the Svelte UI
+/// called a Wails-bound `AtivarProtecaoSistema()` function that was never
+/// implemented, and listened for a `"log:ativar:protecao"` event nothing
+/// ever emitted); this is a first implementation based on the legacy
+/// component's description text, not a port of working legacy logic.
+/// `Enable-ComputerRestore` is a PowerShell cmdlet (no standalone .exe), so
+/// it's invoked via `ProcessRunner` running `powershell` directly with
+/// literal argv — same approach as `domain::system::time::adjust_formatting_time`
+/// uses for `w32tm` — rather than `adapters::powershell::run_script`, which
+/// hardcodes the real `WinProcessRunner` and isn't mockable. Restore must
+/// be enabled before shadow storage can be sized, so step order matters.
+/// Each step is non-fatal, matching every other slice's
+/// `run_and_log` semantics.
+pub async fn enable_system_protection(runner: &impl ProcessRunner, on_log: impl Fn(&str)) {
+    on_log("Iniciando ativação da proteção do sistema...");
+
+    run_and_log(
+        runner,
+        &on_log,
+        "Habilitando Restauração do Sistema para a unidade C:...",
+        "powershell",
+        &[
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "Enable-ComputerRestore -Drive 'C:'",
+        ],
+    )
+    .await;
+
+    run_and_log(
+        runner,
+        &on_log,
+        "Configurando uso de disco para 5%...",
+        "vssadmin",
+        &[
+            "resize",
+            "shadowstorage",
+            "/for=C:",
+            "/on=C:",
+            "/maxsize=5%",
+        ],
+    )
+    .await;
+
+    on_log("--- PROTEÇÃO DO SISTEMA ATIVADA ---");
+}
+
 /// Runs one step, logging its outcome but never aborting the flow on
 /// error — matches legacy `runCommandAndLog` semantics. Same shape as
 /// `domain::system::time::run_and_log`.
@@ -366,5 +415,37 @@ mod tests {
         assert_eq!(recorded[16], "gpupdate /force");
         assert!(recorded.iter().any(|op| op == "net start spooler"));
         assert_eq!(registry.writes.lock().unwrap().len(), 5);
+    }
+
+    #[tokio::test]
+    async fn enable_system_protection_calls_enable_computer_restore_then_vssadmin() {
+        let runner = OrderedFakeProcessRunner::new();
+        let ops = runner.ops.clone();
+
+        super::enable_system_protection(&runner, |_| {}).await;
+
+        let recorded = ops.lock().unwrap().clone();
+        assert_eq!(
+            recorded,
+            vec![
+                "powershell -NoProfile -NonInteractive -Command Enable-ComputerRestore -Drive 'C:'"
+                    .to_string(),
+                "vssadmin resize shadowstorage /for=C: /on=C: /maxsize=5%".to_string(),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn enable_system_protection_continues_past_a_failing_restore_step() {
+        // Even if `Enable-ComputerRestore` fails, the `vssadmin` step must
+        // still run — non-fatal-per-step, matching every other slice.
+        let runner = OrderedFakeProcessRunner::failing_on("powershell");
+        let ops = runner.ops.clone();
+
+        super::enable_system_protection(&runner, |_| {}).await;
+
+        let recorded = ops.lock().unwrap().clone();
+        assert_eq!(recorded.len(), 2);
+        assert!(recorded[1].starts_with("vssadmin"));
     }
 }
