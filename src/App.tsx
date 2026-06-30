@@ -1,17 +1,9 @@
 import { useState } from "react";
 import "./App.css";
 import Login from "./components/Login";
+import Sidebar from "./components/Sidebar";
+import MainView from "./components/MainView";
 import PainelInformacoes from "./components/features/PainelInformacoes";
-import AtivacaoWindows from "./components/features/AtivacaoWindows";
-import AtivacaoOffice from "./components/features/AtivacaoOffice";
-import LimpaCacheDNS from "./components/features/LimpaCacheDNS";
-import LimpaSpoolImpressao from "./components/features/LimpaSpoolImpressao";
-import DesativaHibernacao from "./components/features/DesativaHibernacao";
-import AjustarHoraFormatacao from "./components/features/AjustarHoraFormatacao";
-import CorrigirCompartilhamento from "./components/features/CorrigirCompartilhamento";
-import AtivarProtecaoSistema from "./components/features/AtivarProtecaoSistema";
-import BloqueadorFirewall from "./components/features/BloqueadorFirewall";
-import RestaurarPhotoViewer from "./components/features/RestaurarPhotoViewer";
 
 const MODULOS = [
   {
@@ -36,11 +28,31 @@ const MODULOS = [
       "Restaurar Visualizador de Fotos",
     ],
   },
+  {
+    nome: "Personalização e Sistema",
+    funcionalidades: ["Ativar Gpedit.msc (Home)", "Alterar Layout do Teclado"],
+  },
+  {
+    nome: "Gerenciador de Energia",
+    funcionalidades: ["Agendar Desligamento"],
+  },
 ];
 
 function App() {
   const [logado, setLogado] = useState(false);
   const [funcionalidadeAtiva, setFuncionalidadeAtiva] = useState<string | null>(null);
+  const [menuAberto, setMenuAberto] = useState(false);
+
+  function navegar(item: string) {
+    setFuncionalidadeAtiva(item);
+    setMenuAberto(false);
+  }
+
+  function handleMenuKeyDown(event: React.KeyboardEvent) {
+    if (event.key === "Enter" || event.key === " ") {
+      setMenuAberto((aberto) => !aberto);
+    }
+  }
 
   return (
     <main
@@ -48,28 +60,35 @@ function App() {
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
       <div className="absolute inset-0 bg-black/40" />
+
+      <button
+        className="absolute top-5 right-5 z-50 flex h-8 w-8 cursor-pointer flex-col justify-between gap-1.5 border-none bg-transparent p-2 outline-none hover:opacity-80 focus:outline-2 focus:outline-offset-2 focus:outline-white"
+        onClick={() => setMenuAberto((aberto) => !aberto)}
+        onKeyDown={handleMenuKeyDown}
+        tabIndex={0}
+        aria-label="Abrir menu"
+      >
+        <div className="h-0.5 w-full rounded bg-white transition-all duration-300" />
+        <div className="h-0.5 w-full rounded bg-white transition-all duration-300" />
+        <div className="h-0.5 w-full rounded bg-white transition-all duration-300" />
+      </button>
+
+      {menuAberto && (
+        <Sidebar
+          logado={logado}
+          modulos={MODULOS}
+          onNavigate={navegar}
+          onClose={() => setMenuAberto(false)}
+        />
+      )}
+
       {logado ? (
         <div className="relative z-10 h-[90vh] w-11/12 max-w-6xl">
-          {funcionalidadeAtiva === "Ativação do Windows" ? (
-            <AtivacaoWindows onVoltar={() => setFuncionalidadeAtiva(null)} />
-          ) : funcionalidadeAtiva === "Ativação do Office" ? (
-            <AtivacaoOffice onVoltar={() => setFuncionalidadeAtiva(null)} />
-          ) : funcionalidadeAtiva === "Limpar Cache DNS" ? (
-            <LimpaCacheDNS onVoltar={() => setFuncionalidadeAtiva(null)} />
-          ) : funcionalidadeAtiva === "Limpar e Reiniciar Spool de Impressão" ? (
-            <LimpaSpoolImpressao onVoltar={() => setFuncionalidadeAtiva(null)} />
-          ) : funcionalidadeAtiva === "Desativar Hibernação do Windows" ? (
-            <DesativaHibernacao onVoltar={() => setFuncionalidadeAtiva(null)} />
-          ) : funcionalidadeAtiva === "Ajustar Hora da Formatação" ? (
-            <AjustarHoraFormatacao onVoltar={() => setFuncionalidadeAtiva(null)} />
-          ) : funcionalidadeAtiva === "Corrigir Compartilhamento de Rede" ? (
-            <CorrigirCompartilhamento onVoltar={() => setFuncionalidadeAtiva(null)} />
-          ) : funcionalidadeAtiva === "Ativar Proteção do Sistema" ? (
-            <AtivarProtecaoSistema onVoltar={() => setFuncionalidadeAtiva(null)} />
-          ) : funcionalidadeAtiva === "Bloqueador de Programas no Firewall" ? (
-            <BloqueadorFirewall onVoltar={() => setFuncionalidadeAtiva(null)} />
-          ) : funcionalidadeAtiva === "Restaurar Visualizador de Fotos" ? (
-            <RestaurarPhotoViewer onVoltar={() => setFuncionalidadeAtiva(null)} />
+          {funcionalidadeAtiva ? (
+            <MainView
+              visao={funcionalidadeAtiva}
+              onVoltar={() => setFuncionalidadeAtiva(null)}
+            />
           ) : (
             <PainelInformacoes modulos={MODULOS} onNavigate={setFuncionalidadeAtiva} />
           )}
