@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-standalone
 *.local
 
 # Auth config (argon2id hash) — generated locally with generate_hash, never committed
