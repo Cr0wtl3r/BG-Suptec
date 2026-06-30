@@ -37,6 +37,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(commands::auth::AuthState::new(password_hash))
         .invoke_handler(tauri::generate_handler![
             greet,
@@ -54,6 +55,12 @@ pub fn run() {
             commands::maintenance::desativar_hibernacao,
             commands::security::corrigir_compartilhamento,
             commands::security::ativar_protecao_sistema,
+            commands::security::bloquear_programas_firewall,
+            commands::security::desbloquear_programas_firewall,
+            commands::security::verificar_status_firewall,
+            commands::security::obter_programas_instalados,
+            commands::security::listar_executaveis,
+            commands::security::selecionar_arquivo_exe,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
