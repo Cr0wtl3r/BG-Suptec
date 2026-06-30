@@ -61,6 +61,7 @@ pub fn run() {
             commands::security::obter_programas_instalados,
             commands::security::listar_executaveis,
             commands::security::selecionar_arquivo_exe,
+            commands::personalization::restaurar_photo_viewer,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

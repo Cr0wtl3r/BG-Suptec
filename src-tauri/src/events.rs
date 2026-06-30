@@ -14,6 +14,12 @@ pub const LOG_COMPARTILHAMENTO: &str = "log:compartilhamento";
 pub const COMPARTILHAMENTO_FINALIZADO: &str = "compartilhamento:finalizado";
 pub const LOG_ATIVAR_PROTECAO: &str = "log:ativar:protecao";
 pub const ATIVAR_PROTECAO_FINALIZADO: &str = "ativar:protecao:finalizado";
+pub const LOG_RESTAURAR_PHOTOVIEWER: &str = "log:restaurar:photoviewer";
+/// Note the `log:` prefix on the *completion* event too — unlike every
+/// other slice's `x:finalizado` naming, the plan checklist (item 12.3)
+/// gives this exact string verbatim, so it's used as-is rather than
+/// normalized to match the `ATIVAR_PROTECAO_FINALIZADO`-style pattern.
+pub const RESTAURAR_PHOTOVIEWER_FINALIZADO: &str = "log:restaurar:photoviewer:finalizado";
 
 /// Emits a single log line on `event_name`. Mirrors the legacy
 /// `emitLogRunner`'s fire-and-forget semantics: if the window has already

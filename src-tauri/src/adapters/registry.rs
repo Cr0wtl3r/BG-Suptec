@@ -1,4 +1,4 @@
-use winreg::enums::HKEY_LOCAL_MACHINE;
+use winreg::enums::{HKEY_CLASSES_ROOT, HKEY_LOCAL_MACHINE};
 use winreg::RegKey;
 
 use crate::ports::{RegistryReader, RegistryWriter};
@@ -36,6 +36,24 @@ impl RegistryReader for WinRegistryReader {
 
 impl RegistryWriter for WinRegistryReader {
     fn write_local_machine_dword(&self, path: &str, name: &str, value: u32) -> Result<(), String> {
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let (key, _) = hklm
+            .create_subkey(path)
+            .map_err(|e| format!("falha ao abrir/criar a chave {path}: {e}"))?;
+        key.set_value(name, &value)
+            .map_err(|e| format!("falha ao escrever o valor {name} em {path}: {e}"))
+    }
+
+    fn write_classes_root_string(&self, path: &str, name: &str, value: &str) -> Result<(), String> {
+        let hkcr = RegKey::predef(HKEY_CLASSES_ROOT);
+        let (key, _) = hkcr
+            .create_subkey(path)
+            .map_err(|e| format!("falha ao abrir/criar a chave {path}: {e}"))?;
+        key.set_value(name, &value)
+            .map_err(|e| format!("falha ao escrever o valor {name} em {path}: {e}"))
+    }
+
+    fn write_local_machine_string(&self, path: &str, name: &str, value: &str) -> Result<(), String> {
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
         let (key, _) = hklm
             .create_subkey(path)

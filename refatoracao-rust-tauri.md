@@ -187,10 +187,12 @@ Mova todo o conteúdo "legado" para uma pasta legacy_code e começe a construir 
 
 ### Slice 12: Restaurar Photo Viewer
 
-- [ ] **12.1** Escrever teste: `restore_photo_viewer()` escreve 20+ chaves de registro HKCR/HKLM → Verify: teste passa
-- [ ] **12.2** Implementar com `adapters/registry.rs` — array de structs `RegChange { path, value, type, data }` → Verify: todas chaves escritas
-- [ ] **12.3** Emitir evento `log:restaurar:photoviewer:finalizado` no fim (corrigir dead promise do atual) → Verify: frontend recebe evento
-- [ ] **12.4** Criar `RestaurarPhotoViewer.tsx` com LogPanel → Verify: não trava mais (bug atual corrigido)
+- [x] **12.1** Escrever teste: `restore_photo_viewer()` escreve 20+ chaves de registro HKCR/HKLM → Verify: teste passa
+- [x] **12.2** Implementar com `adapters/registry.rs` — array de structs `RegChange { path, value, type, data }` → Verify: todas chaves escritas
+- [x] **12.3** Emitir evento `log:restaurar:photoviewer:finalizado` no fim (corrigir dead promise do atual) → Verify: frontend recebe evento
+- [x] **12.4** Criar `RestaurarPhotoViewer.tsx` com LogPanel → Verify: não trava mais (bug atual corrigido)
+
+**Done When:** Photo Viewer restaurado, UI não trava mais, logs completos. ✅
 
 **Done When:** Photo Viewer restaurado, UI não trava mais, logs completos.
 

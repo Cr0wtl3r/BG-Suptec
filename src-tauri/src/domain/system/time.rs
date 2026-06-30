@@ -178,6 +178,24 @@ mod tests {
                 .push((path.to_string(), name.to_string(), value));
             Ok(())
         }
+
+        fn write_classes_root_string(
+            &self,
+            _path: &str,
+            _name: &str,
+            _value: &str,
+        ) -> Result<(), String> {
+            Ok(())
+        }
+
+        fn write_local_machine_string(
+            &self,
+            _path: &str,
+            _name: &str,
+            _value: &str,
+        ) -> Result<(), String> {
+            Ok(())
+        }
     }
 
     #[tokio::test]

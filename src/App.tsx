@@ -11,6 +11,7 @@ import AjustarHoraFormatacao from "./components/features/AjustarHoraFormatacao";
 import CorrigirCompartilhamento from "./components/features/CorrigirCompartilhamento";
 import AtivarProtecaoSistema from "./components/features/AtivarProtecaoSistema";
 import BloqueadorFirewall from "./components/features/BloqueadorFirewall";
+import RestaurarPhotoViewer from "./components/features/RestaurarPhotoViewer";
 
 const MODULOS = [
   {
@@ -32,6 +33,7 @@ const MODULOS = [
       "Corrigir Compartilhamento de Rede",
       "Ativar Proteção do Sistema",
       "Bloqueador de Programas no Firewall",
+      "Restaurar Visualizador de Fotos",
     ],
   },
 ];
@@ -66,6 +68,8 @@ function App() {
             <AtivarProtecaoSistema onVoltar={() => setFuncionalidadeAtiva(null)} />
           ) : funcionalidadeAtiva === "Bloqueador de Programas no Firewall" ? (
             <BloqueadorFirewall onVoltar={() => setFuncionalidadeAtiva(null)} />
+          ) : funcionalidadeAtiva === "Restaurar Visualizador de Fotos" ? (
+            <RestaurarPhotoViewer onVoltar={() => setFuncionalidadeAtiva(null)} />
           ) : (
             <PainelInformacoes modulos={MODULOS} onNavigate={setFuncionalidadeAtiva} />
           )}

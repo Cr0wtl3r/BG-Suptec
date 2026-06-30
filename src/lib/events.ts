@@ -13,4 +13,6 @@ export const EVENTOS = {
   compartilhamentoFinalizado: "compartilhamento:finalizado",
   logAtivarProtecao: "log:ativar:protecao",
   ativarProtecaoFinalizado: "ativar:protecao:finalizado",
+  logRestaurarPhotoviewer: "log:restaurar:photoviewer",
+  restaurarPhotoviewerFinalizado: "log:restaurar:photoviewer:finalizado",
 } as const;
