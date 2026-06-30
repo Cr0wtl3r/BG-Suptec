@@ -1,4 +1,5 @@
 use crate::adapters::process::WinProcessRunner;
+use crate::adapters::registry::WinRegistryReader;
 use crate::domain::security::fix_network_sharing;
 use crate::events::{self, COMPARTILHAMENTO_FINALIZADO, LOG_COMPARTILHAMENTO};
 
@@ -14,7 +15,7 @@ use crate::events::{self, COMPARTILHAMENTO_FINALIZADO, LOG_COMPARTILHAMENTO};
 pub async fn corrigir_compartilhamento(window: tauri::Window) -> Result<(), String> {
     let runner = WinProcessRunner;
 
-    fix_network_sharing(&runner, |msg| {
+    fix_network_sharing(&runner, &WinRegistryReader, |msg| {
         events::emit_log(&window, LOG_COMPARTILHAMENTO, msg)
     })
     .await;

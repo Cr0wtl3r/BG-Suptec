@@ -54,3 +54,40 @@ Wrote test + implementation together (both passed on first run since the impleme
 ## Commit
 
 Committed directly to `main` per repo convention (no feature branch).
+
+---
+
+## Follow-up fix: use `RegistryWriter` port for registry step (review finding)
+
+**Date:** 2026-06-30
+**Trigger:** Important finding from task review of commit `dc99742` (Slice 9, merged to `main`).
+
+### Finding
+
+`fix_network_sharing`'s Etapa 3/4 wrote its 5 registry values by shelling out to `reg add <path> /v <value> /t REG_DWORD /d <data> /f` via `ProcessRunner`. The immediately-prior slice (Slice 8, `domain::system::time::adjust_formatting_time`) had already established `ports::RegistryWriter::write_local_machine_dword(path, name, value) -> Result<(), String>` for exactly this case — writing a `REG_DWORD` under `HKEY_LOCAL_MACHINE`. All 5 of Slice 9's registry changes fit this port exactly, so the raw `reg add` argv-building duplicated what the port already abstracted and diverged from the pattern set one slice earlier.
+
+### What changed
+
+- **`src-tauri/src/domain/security/mod.rs`**:
+  - `fix_network_sharing` now takes an additional `registry: &impl RegistryWriter` parameter (alongside the existing `runner: &impl ProcessRunner`), following the exact signature shape of `domain::system::time::adjust_formatting_time(runner, registry, now_unix, on_log)`.
+  - `RegChange` struct simplified: dropped `tipo` (always `REG_DWORD`, now implicit in `write_local_machine_dword`) and changed `data: &'static str` to `data: u32`. Paths no longer carry the `HKLM\` prefix (now implicit in `write_local_machine_dword`, matching `time.rs`'s `REG_PATH_WINDOWS_VERSION` convention).
+  - Etapa 3/4's loop now calls `registry.write_local_machine_dword(change.path, change.value, change.data)` instead of `run_and_log(runner, ..., "reg", &["add", ...])`; logs `--> {msg}` before and a non-fatal `AVISO: ...` line on `Err`, same semantics as before.
+  - Service/firewall/gpupdate steps (Etapas 1, 2, 4) are unchanged — still on `ProcessRunner`.
+  - Test module: added `FakeRegistryWriter` (records `(path, name, value)` triples in a `Mutex<Vec<_>>`), same shape as `domain::system::time::tests::FakeRegistryWriter`. Both tests updated to construct and pass a `FakeRegistryWriter`:
+    - `fix_network_sharing_issues_all_four_steps_in_order`: the 5 `reg add` argv assertions were replaced with a single `assert_eq!` on `registry.writes.lock().unwrap().clone()` against a `Vec` of the 5 expected `(path, name, value)` tuples, in order. The `ProcessRunner` `recorded` assertions for Etapa 4 shifted from indices `[19..21]`/len 22 to `[14..16]`/len 17 (since the registry step no longer appears in `recorded`).
+    - `fix_network_sharing_continues_past_a_failing_step`: same index/length shift (len 17, `gpupdate /force` at index 16), plus a new assertion that `registry.writes.lock().unwrap().len() == 5` (registry step still runs to completion even when `sc` fails).
+  - No test coverage was lost — the 5 registry value assertions (path, name, value) still exist, just expressed via the new mechanism instead of `reg add` argv strings.
+- **`src-tauri/src/commands/security.rs`**: `corrigir_compartilhamento` now imports `crate::adapters::registry::WinRegistryReader` and passes `&WinRegistryReader` as the second argument to `fix_network_sharing`, mirroring exactly how `commands/system_info.rs`'s `ajustar_hora_formatacao` wires `&WinRegistryReader` into `adjust_formatting_time`.
+
+### Commands run / results
+
+- `cargo build` (from `src-tauri/`): clean, finished in 9.59s, **no warnings**.
+- `cargo test --lib` (from `src-tauri/`): **89 passed; 0 failed; 0 ignored** — same total as before the fix (the two rewritten tests net to zero change in test count; all 5 registry-write assertions preserved, just via `FakeRegistryWriter` instead of `reg add` argv).
+
+### Deviations from the finding
+
+None — applied exactly as specified: only the registry step moved to `RegistryWriter`, service/firewall/gpupdate steps untouched, command wiring mirrors Slice 8's `WinRegistryReader` pattern verbatim.
+
+### Commit
+
+Committed directly to `main` per repo convention (no feature branch) as a Slice 9 follow-up fix.

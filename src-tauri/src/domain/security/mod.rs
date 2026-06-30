@@ -1,4 +1,4 @@
-use crate::ports::ProcessRunner;
+use crate::ports::{ProcessRunner, RegistryWriter};
 
 /// Network services restarted with auto-start, in order, as part of the
 /// network sharing fix — mirrors legacy `CorrigirCompartilhamentoWindows`'s
@@ -15,50 +15,47 @@ const SERVICOS: [&str; 6] = [
 struct RegChange {
     path: &'static str,
     value: &'static str,
-    tipo: &'static str,
-    data: &'static str,
+    data: u32,
     log_msg: &'static str,
 }
 
 /// Registry changes applied in Etapa 3/4 — mirrors legacy `changes` slice
-/// exactly (path/value/type/data/log message). `RequireSecuritySignature`
-/// and `limitblankpassworduse` are the two changes the UI must warn about
+/// exactly (path/value/type/data/log message). All five are `REG_DWORD`
+/// writes under `HKEY_LOCAL_MACHINE`, applied via `RegistryWriter` (same
+/// port `domain::system::time::adjust_formatting_time` uses for its
+/// `InstallDate` write). `RequireSecuritySignature` and
+/// `limitblankpassworduse` are the two changes the UI must warn about
 /// before this function runs (SMB signing requirement removed, blank-
 /// password guest logons allowed).
 const REG_CHANGES: [RegChange; 5] = [
     RegChange {
-        path: r"HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters",
+        path: r"SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters",
         value: "AllowInsecureGuestAuth",
-        tipo: "REG_DWORD",
-        data: "1",
+        data: 1,
         log_msg: "Habilitando logons de convidado não seguros...",
     },
     RegChange {
-        path: r"HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters",
+        path: r"SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters",
         value: "RequireSecuritySignature",
-        tipo: "REG_DWORD",
-        data: "0",
+        data: 0,
         log_msg: "Ajustando política de assinatura digital (Require)...",
     },
     RegChange {
-        path: r"HKLM\SYSTEM\CurrentControlSet\Control\Print",
+        path: r"SYSTEM\CurrentControlSet\Control\Print",
         value: "RpcAuthnLevelPrivacyEnabled",
-        tipo: "REG_DWORD",
-        data: "0",
+        data: 0,
         log_msg: "Desativando privacidade RPC estrita para impressoras...",
     },
     RegChange {
-        path: r"HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint",
+        path: r"SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint",
         value: "RestrictDriverInstallationToAdministrators",
-        tipo: "REG_DWORD",
-        data: "0",
+        data: 0,
         log_msg: "Permitindo instalação de drivers de impressão...",
     },
     RegChange {
-        path: r"HKLM\SYSTEM\CurrentControlSet\Control\Lsa",
+        path: r"SYSTEM\CurrentControlSet\Control\Lsa",
         value: "limitblankpassworduse",
-        tipo: "REG_DWORD",
-        data: "0",
+        data: 0,
         log_msg: "Habilitando acesso para usuários com senha em branco...",
     },
 ];
@@ -76,7 +73,11 @@ const REG_CHANGES: [RegChange; 5] = [
 /// blank-password guest logons) — callers must warn the user before
 /// invoking this function; the warning isn't enforced here since the
 /// domain layer stays UI-agnostic.
-pub async fn fix_network_sharing(runner: &impl ProcessRunner, on_log: impl Fn(&str)) {
+pub async fn fix_network_sharing(
+    runner: &impl ProcessRunner,
+    registry: &impl RegistryWriter,
+    on_log: impl Fn(&str),
+) {
     on_log("INICIANDO CORREÇÃO DE COMPARTILHAMENTO DE REDE...");
 
     on_log("\n--> Etapa 1/4: Configurando Serviços de Rede...");
@@ -128,24 +129,13 @@ pub async fn fix_network_sharing(runner: &impl ProcessRunner, on_log: impl Fn(&s
 
     on_log("\n--> Etapa 3/4: Aplicando Configurações no Registro do Windows...");
     for change in REG_CHANGES {
-        run_and_log(
-            runner,
-            &on_log,
-            change.log_msg,
-            "reg",
-            &[
-                "add",
-                change.path,
-                "/v",
-                change.value,
-                "/t",
-                change.tipo,
-                "/d",
-                change.data,
-                "/f",
-            ],
-        )
-        .await;
+        on_log(&format!("--> {}", change.log_msg));
+        if let Err(e) = registry.write_local_machine_dword(change.path, change.value, change.data)
+        {
+            on_log(&format!(
+                "AVISO: Comando encontrou um erro (pode ser normal): {e}"
+            ));
+        }
     }
 
     on_log("\n--> Etapa 4/4: Finalizando e Aplicando Políticas...");
@@ -199,7 +189,7 @@ async fn run_and_log(
 
 #[cfg(test)]
 mod tests {
-    use crate::ports::ProcessRunner;
+    use crate::ports::{ProcessRunner, RegistryWriter};
     use std::sync::Mutex;
 
     /// Records every call's program+args (joined) in a single shared,
@@ -245,12 +235,43 @@ mod tests {
         }
     }
 
+    /// Records every `write_local_machine_dword` call (path, name, value)
+    /// so tests can assert the 5 registry changes — same pattern as
+    /// `domain::system::time::tests::FakeRegistryWriter`.
+    struct FakeRegistryWriter {
+        writes: Mutex<Vec<(String, String, u32)>>,
+    }
+
+    impl FakeRegistryWriter {
+        fn new() -> Self {
+            Self {
+                writes: Mutex::new(Vec::new()),
+            }
+        }
+    }
+
+    impl RegistryWriter for FakeRegistryWriter {
+        fn write_local_machine_dword(
+            &self,
+            path: &str,
+            name: &str,
+            value: u32,
+        ) -> Result<(), String> {
+            self.writes
+                .lock()
+                .unwrap()
+                .push((path.to_string(), name.to_string(), value));
+            Ok(())
+        }
+    }
+
     #[tokio::test]
     async fn fix_network_sharing_issues_all_four_steps_in_order() {
         let runner = OrderedFakeProcessRunner::new();
         let ops = runner.ops.clone();
+        let registry = FakeRegistryWriter::new();
 
-        super::fix_network_sharing(&runner, |_| {}).await;
+        super::fix_network_sharing(&runner, &registry, |_| {}).await;
 
         let recorded = ops.lock().unwrap().clone();
 
@@ -284,34 +305,48 @@ mod tests {
             r#"netsh advfirewall firewall set rule group="Remote Service Management" new enable=yes"#
         );
 
-        // Etapa 3/4: all 5 registry changes, exact path/value/type/data.
+        // Etapa 3/4: all 5 registry changes, written via RegistryWriter
+        // (not ProcessRunner) — exact path/value/data, in order.
         assert_eq!(
-            recorded[14],
-            r"reg add HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters /v AllowInsecureGuestAuth /t REG_DWORD /d 1 /f"
-        );
-        assert_eq!(
-            recorded[15],
-            r"reg add HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters /v RequireSecuritySignature /t REG_DWORD /d 0 /f"
-        );
-        assert_eq!(
-            recorded[16],
-            r"reg add HKLM\SYSTEM\CurrentControlSet\Control\Print /v RpcAuthnLevelPrivacyEnabled /t REG_DWORD /d 0 /f"
-        );
-        assert_eq!(
-            recorded[17],
-            r"reg add HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint /v RestrictDriverInstallationToAdministrators /t REG_DWORD /d 0 /f"
-        );
-        assert_eq!(
-            recorded[18],
-            r"reg add HKLM\SYSTEM\CurrentControlSet\Control\Lsa /v limitblankpassworduse /t REG_DWORD /d 0 /f"
+            registry.writes.lock().unwrap().clone(),
+            vec![
+                (
+                    r"SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters"
+                        .to_string(),
+                    "AllowInsecureGuestAuth".to_string(),
+                    1,
+                ),
+                (
+                    r"SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters"
+                        .to_string(),
+                    "RequireSecuritySignature".to_string(),
+                    0,
+                ),
+                (
+                    r"SYSTEM\CurrentControlSet\Control\Print".to_string(),
+                    "RpcAuthnLevelPrivacyEnabled".to_string(),
+                    0,
+                ),
+                (
+                    r"SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint"
+                        .to_string(),
+                    "RestrictDriverInstallationToAdministrators".to_string(),
+                    0,
+                ),
+                (
+                    r"SYSTEM\CurrentControlSet\Control\Lsa".to_string(),
+                    "limitblankpassworduse".to_string(),
+                    0,
+                ),
+            ]
         );
 
         // Etapa 4/4: spooler restart then gpupdate /force, last.
-        assert_eq!(recorded[19], "net stop spooler");
-        assert_eq!(recorded[20], "net start spooler");
-        assert_eq!(recorded[21], "gpupdate /force");
+        assert_eq!(recorded[14], "net stop spooler");
+        assert_eq!(recorded[15], "net start spooler");
+        assert_eq!(recorded[16], "gpupdate /force");
 
-        assert_eq!(recorded.len(), 22);
+        assert_eq!(recorded.len(), 17);
     }
 
     #[tokio::test]
@@ -322,12 +357,14 @@ mod tests {
         // legacy `runCommandAndLog`.
         let runner = OrderedFakeProcessRunner::failing_on("sc");
         let ops = runner.ops.clone();
+        let registry = FakeRegistryWriter::new();
 
-        super::fix_network_sharing(&runner, |_| {}).await;
+        super::fix_network_sharing(&runner, &registry, |_| {}).await;
 
         let recorded = ops.lock().unwrap().clone();
-        assert_eq!(recorded.len(), 22);
-        assert_eq!(recorded[21], "gpupdate /force");
+        assert_eq!(recorded.len(), 17);
+        assert_eq!(recorded[16], "gpupdate /force");
         assert!(recorded.iter().any(|op| op == "net start spooler"));
+        assert_eq!(registry.writes.lock().unwrap().len(), 5);
     }
 }
