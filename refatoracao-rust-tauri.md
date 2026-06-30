@@ -153,10 +153,10 @@ Mova todo o conteúdo "legado" para uma pasta legacy_code e começe a construir 
 
 ### Slice 9: Corrige Compartilhamento Windows (4 etapas)
 
-- [ ] **9.1** Escrever teste: `fix_network_sharing()` executa 4 etapas (serviços, firewall, registro, políticas) → Verify: teste passa
-- [ ] **9.2** Implementar com sequência de comandos: `sc config`, `net start`, `netsh advfirewall`, `reg add`, `gpupdate /force` → Verify: todas etapas executam
-- [ ] **9.3** Adicionar AVISO na UI sobre redução de segurança SMB (limitblankpassworduse, RequireSecuritySignature) → Verify: modal de aviso aparece antes de executar
-- [ ] **9.4** Criar `CorrigirCompartilhamento.tsx` com LogPanel + modal de confirmação → Verify: visual idêntico
+- [x] **9.1** Escrever teste: `fix_network_sharing()` executa 4 etapas (serviços, firewall, registro, políticas) → Verify: teste passa
+- [x] **9.2** Implementar com sequência de comandos: `sc config`, `net start`, `netsh advfirewall`, `reg add`, `gpupdate /force` → Verify: todas etapas executam
+- [x] **9.3** Adicionar AVISO na UI sobre redução de segurança SMB (limitblankpassworduse, RequireSecuritySignature) → Verify: modal de aviso aparece antes de executar
+- [x] **9.4** Criar `CorrigirCompartilhamento.tsx` com LogPanel + modal de confirmação → Verify: visual idêntico
 
 **Done When:** Compartilhamento corrigido com aviso de segurança explícito.
 

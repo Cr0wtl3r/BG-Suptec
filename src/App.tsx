@@ -8,6 +8,7 @@ import LimpaCacheDNS from "./components/features/LimpaCacheDNS";
 import LimpaSpoolImpressao from "./components/features/LimpaSpoolImpressao";
 import DesativaHibernacao from "./components/features/DesativaHibernacao";
 import AjustarHoraFormatacao from "./components/features/AjustarHoraFormatacao";
+import CorrigirCompartilhamento from "./components/features/CorrigirCompartilhamento";
 
 const MODULOS = [
   {
@@ -24,7 +25,7 @@ const MODULOS = [
   },
   {
     nome: "Reparos e Soluções",
-    funcionalidades: ["Ajustar Hora da Formatação"],
+    funcionalidades: ["Ajustar Hora da Formatação", "Corrigir Compartilhamento de Rede"],
   },
 ];
 
@@ -52,6 +53,8 @@ function App() {
             <DesativaHibernacao onVoltar={() => setFuncionalidadeAtiva(null)} />
           ) : funcionalidadeAtiva === "Ajustar Hora da Formatação" ? (
             <AjustarHoraFormatacao onVoltar={() => setFuncionalidadeAtiva(null)} />
+          ) : funcionalidadeAtiva === "Corrigir Compartilhamento de Rede" ? (
+            <CorrigirCompartilhamento onVoltar={() => setFuncionalidadeAtiva(null)} />
           ) : (
             <PainelInformacoes modulos={MODULOS} onNavigate={setFuncionalidadeAtiva} />
           )}

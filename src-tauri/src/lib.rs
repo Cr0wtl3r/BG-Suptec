@@ -52,6 +52,7 @@ pub fn run() {
             commands::maintenance::limpar_cache_dns,
             commands::maintenance::limpar_spool_impressao,
             commands::maintenance::desativar_hibernacao,
+            commands::security::corrigir_compartilhamento,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
