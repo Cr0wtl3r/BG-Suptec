@@ -20,6 +20,10 @@ pub const LOG_RESTAURAR_PHOTOVIEWER: &str = "log:restaurar:photoviewer";
 /// gives this exact string verbatim, so it's used as-is rather than
 /// normalized to match the `ATIVAR_PROTECAO_FINALIZADO`-style pattern.
 pub const RESTAURAR_PHOTOVIEWER_FINALIZADO: &str = "log:restaurar:photoviewer:finalizado";
+/// Mirrors the legacy `AtivarGpedit.svelte` stub's event name verbatim
+/// (the stub listened for this event, but no Go code ever emitted it —
+/// this is the first real emitter).
+pub const LOG_ATIVAR_GPEDIT: &str = "log:ativar:gpedit";
 
 /// Emits a single log line on `event_name`. Mirrors the legacy
 /// `emitLogRunner`'s fire-and-forget semantics: if the window has already

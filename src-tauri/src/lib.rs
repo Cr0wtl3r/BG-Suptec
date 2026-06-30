@@ -62,6 +62,12 @@ pub fn run() {
             commands::security::listar_executaveis,
             commands::security::selecionar_arquivo_exe,
             commands::personalization::restaurar_photo_viewer,
+            commands::keyboard::obter_layouts_teclado,
+            commands::keyboard::obter_layout_ativo,
+            commands::keyboard::alterar_layout_teclado,
+            commands::gpedit::ativar_gpedit,
+            commands::power::agendar_desligamento,
+            commands::power::cancelar_desligamento,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -15,4 +15,5 @@ export const EVENTOS = {
   ativarProtecaoFinalizado: "ativar:protecao:finalizado",
   logRestaurarPhotoviewer: "log:restaurar:photoviewer",
   restaurarPhotoviewerFinalizado: "log:restaurar:photoviewer:finalizado",
+  logAtivarGpedit: "log:ativar:gpedit",
 } as const;

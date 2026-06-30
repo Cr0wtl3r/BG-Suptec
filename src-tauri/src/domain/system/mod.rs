@@ -2,6 +2,9 @@ use serde::Serialize;
 
 use crate::ports::{MemoryReader, NetworkReader, RegistryReader};
 
+pub mod gpedit;
+pub mod keyboard;
+pub mod power;
 pub mod time;
 
 const REG_PATH_WINDOWS_VERSION: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion";

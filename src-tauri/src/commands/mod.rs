@@ -1,7 +1,10 @@
 pub mod activation;
 pub mod auth;
+pub mod gpedit;
+pub mod keyboard;
 pub mod maintenance;
 pub mod network;
 pub mod personalization;
+pub mod power;
 pub mod security;
 pub mod system_info;
