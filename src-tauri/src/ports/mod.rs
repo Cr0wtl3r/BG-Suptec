@@ -1,3 +1,4 @@
+mod audit;
 mod cscript;
 mod memory;
 mod network;
@@ -6,6 +7,7 @@ mod registry;
 mod registry_writer;
 mod tcp_health;
 
+pub use audit::AuditWriter;
 pub use cscript::CscriptRunner;
 pub use memory::MemoryReader;
 pub use network::{NetworkInfo, NetworkReader};

@@ -1,4 +1,5 @@
 use crate::adapters::registry::WinRegistryReader;
+use crate::audit;
 use crate::domain::personalization::restore_photo_viewer;
 use crate::events::{self, LOG_RESTAURAR_PHOTOVIEWER, RESTAURAR_PHOTOVIEWER_FINALIZADO};
 
@@ -17,6 +18,8 @@ pub fn restaurar_photo_viewer(window: tauri::Window) -> Result<(), String> {
     });
 
     events::emit_finalizado(&window, RESTAURAR_PHOTOVIEWER_FINALIZADO, true);
+
+    audit::record("restaurar_photo_viewer", "", "ok");
 
     Ok(())
 }

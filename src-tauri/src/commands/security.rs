@@ -4,6 +4,7 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::adapters::process::WinProcessRunner;
 use crate::adapters::registry::WinRegistryReader;
+use crate::audit;
 use crate::domain::security::firewall::{
     block_program_in_firewall, check_firewall_status, list_executables, list_installed_programs,
     unblock_program_in_firewall, ProgramaInfo,
@@ -67,10 +68,19 @@ pub async fn ativar_protecao_sistema(window: tauri::Window) -> Result<(), String
 #[tauri::command]
 pub async fn bloquear_programas_firewall(caminhos: Vec<String>) -> Result<(), String> {
     let runner = WinProcessRunner;
-    for caminho in caminhos {
-        block_program_in_firewall(&runner, &caminho).await?;
+    let mut resultado = Ok(());
+    for caminho in &caminhos {
+        resultado = block_program_in_firewall(&runner, caminho).await;
+        if resultado.is_err() {
+            break;
+        }
     }
-    Ok(())
+    audit::record(
+        "bloquear_programas_firewall",
+        &format!("caminhos={}", caminhos.join(";")),
+        &audit::outcome(&resultado),
+    );
+    resultado
 }
 
 /// Removes the firewall block rule for each given executable path —
@@ -79,10 +89,19 @@ pub async fn bloquear_programas_firewall(caminhos: Vec<String>) -> Result<(), St
 #[tauri::command]
 pub async fn desbloquear_programas_firewall(caminhos: Vec<String>) -> Result<(), String> {
     let runner = WinProcessRunner;
-    for caminho in caminhos {
-        unblock_program_in_firewall(&runner, &caminho).await?;
+    let mut resultado = Ok(());
+    for caminho in &caminhos {
+        resultado = unblock_program_in_firewall(&runner, caminho).await;
+        if resultado.is_err() {
+            break;
+        }
     }
-    Ok(())
+    audit::record(
+        "desbloquear_programas_firewall",
+        &format!("caminhos={}", caminhos.join(";")),
+        &audit::outcome(&resultado),
+    );
+    resultado
 }
 
 /// Checks whether each given executable path currently has a firewall

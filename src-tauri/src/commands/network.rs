@@ -1,15 +1,27 @@
 use crate::adapters::{powershell, process};
+use crate::audit;
 use crate::domain::network::{validate_computer_name, validate_ipv4};
 
 #[tauri::command]
 pub async fn reiniciar_computador() -> Result<(), String> {
-    process::run("shutdown", &["/r", "/t", "0"]).await?;
-    Ok(())
+    let resultado = process::run("shutdown", &["/r", "/t", "0"]).await.map(|_| ());
+    audit::record("reiniciar_computador", "", &audit::outcome(&resultado));
+    resultado
 }
 
 #[tauri::command]
 pub async fn alterar_nome_computador(novo_nome: String) -> Result<bool, String> {
-    let nome_sanitizado = validate_computer_name(&novo_nome)?;
+    let resultado = alterar_nome_computador_inner(&novo_nome).await;
+    audit::record(
+        "alterar_nome_computador",
+        &format!("novo_nome={novo_nome}"),
+        &audit::outcome(&resultado),
+    );
+    resultado
+}
+
+async fn alterar_nome_computador_inner(novo_nome: &str) -> Result<bool, String> {
+    let nome_sanitizado = validate_computer_name(novo_nome)?;
 
     powershell::run_script_with_env(
         "Rename-Computer -NewName $env:BG_NOVO_NOME -Force -PassThru",
@@ -36,6 +48,21 @@ pub async fn alterar_ip(
     mascara: String,
     gateway: String,
 ) -> Result<(), String> {
+    let resultado = alterar_ip_inner(&interface_name, &novo_ip, &mascara, &gateway).await;
+    audit::record(
+        "alterar_ip",
+        &format!("interface={interface_name},ip={novo_ip},mascara={mascara},gateway={gateway}"),
+        &audit::outcome(&resultado),
+    );
+    resultado
+}
+
+async fn alterar_ip_inner(
+    interface_name: &str,
+    novo_ip: &str,
+    mascara: &str,
+    gateway: &str,
+) -> Result<(), String> {
     if interface_name.is_empty() {
         return Err("não foi possível identificar a interface de rede para alteração".to_string());
     }
@@ -58,9 +85,9 @@ pub async fn alterar_ip(
         return Ok(());
     }
 
-    validate_ipv4(&novo_ip)?;
+    validate_ipv4(novo_ip)?;
 
-    if !ip_disponivel(&novo_ip).await {
+    if !ip_disponivel(novo_ip).await {
         return Err("o IP informado já está em uso na rede".to_string());
     }
 
@@ -73,9 +100,9 @@ pub async fn alterar_ip(
             "address",
             name_arg.as_str(),
             "static",
-            novo_ip.as_str(),
-            mascara.as_str(),
-            gateway.as_str(),
+            novo_ip,
+            mascara,
+            gateway,
         ],
     )
     .await?;
@@ -88,6 +115,22 @@ pub async fn alterar_dns(
     interface_name: String,
     dns_primario: String,
     dns_secundario: String,
+) -> Result<(), String> {
+    let resultado = alterar_dns_inner(&interface_name, &dns_primario, &dns_secundario).await;
+    audit::record(
+        "alterar_dns",
+        &format!(
+            "interface={interface_name},dns_primario={dns_primario},dns_secundario={dns_secundario}"
+        ),
+        &audit::outcome(&resultado),
+    );
+    resultado
+}
+
+async fn alterar_dns_inner(
+    interface_name: &str,
+    dns_primario: &str,
+    dns_secundario: &str,
 ) -> Result<(), String> {
     if interface_name.is_empty() {
         return Err("não foi possível identificar a interface de rede para alteração".to_string());
@@ -104,7 +147,7 @@ pub async fn alterar_dns(
         return Ok(());
     }
 
-    validate_ipv4(&dns_primario).map_err(|_| "DNS primário tem formato inválido".to_string())?;
+    validate_ipv4(dns_primario).map_err(|_| "DNS primário tem formato inválido".to_string())?;
 
     process::run(
         "netsh",
@@ -115,14 +158,14 @@ pub async fn alterar_dns(
             "dns",
             name_arg.as_str(),
             "static",
-            dns_primario.as_str(),
+            dns_primario,
         ],
     )
     .await
     .map_err(|e| format!("erro ao configurar DNS primário: {e}"))?;
 
     if !dns_secundario.is_empty() {
-        validate_ipv4(&dns_secundario)
+        validate_ipv4(dns_secundario)
             .map_err(|_| "DNS secundário tem formato inválido".to_string())?;
 
         process::run(
@@ -133,7 +176,7 @@ pub async fn alterar_dns(
                 "add",
                 "dns",
                 name_arg.as_str(),
-                dns_secundario.as_str(),
+                dns_secundario,
                 "index=2",
             ],
         )
