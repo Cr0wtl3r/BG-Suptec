@@ -192,9 +192,7 @@ Mova todo o conteúdo "legado" para uma pasta legacy_code e começe a construir 
 - [x] **12.3** Emitir evento `log:restaurar:photoviewer:finalizado` no fim (corrigir dead promise do atual) → Verify: frontend recebe evento
 - [x] **12.4** Criar `RestaurarPhotoViewer.tsx` com LogPanel → Verify: não trava mais (bug atual corrigido)
 
-**Done When:** Photo Viewer restaurado, UI não trava mais, logs completos. ✅
-
-**Done When:** Photo Viewer restaurado, UI não trava mais, logs completos.
+**Done When:** Photo Viewer restaurado, UI não trava mais, logs completos. ✅ Slice 12 completo (12.1–12.4). Semana 3 do plano concluída (Slices 9–12).
 
 ---
 
