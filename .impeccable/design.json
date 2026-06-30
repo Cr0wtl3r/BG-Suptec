@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-29T00:00:00Z",
+  "title": "Design System: BG-SupTec",
+  "extensions": {
+    "colorMeta": {
+      "accent-orange": {
+        "role": "primary",
+        "displayName": "Laranja Queimado",
+        "canonical": "#ed5f0c",
+        "tonalRamp": ["#3a1a05", "#5c290a", "#83390e", "#ab4810", "#ed5f0c", "#f08038", "#f5a874", "#fad3b3"]
+      },
+      "dark-blue-bg": {
+        "role": "neutral",
+        "displayName": "Ardósia Profunda",
+        "canonical": "#1A202C",
+        "tonalRamp": ["#0d1016", "#15181f", "#1A202C", "#222938", "#2d3545", "#3d4659", "#5b6478", "#9aa2b2"]
+      },
+      "dark-blue-light": {
+        "role": "neutral",
+        "displayName": "Ardósia Clara",
+        "canonical": "#2D3748",
+        "tonalRamp": ["#171b22", "#202733", "#2D3748", "#3a4659", "#4c5a72", "#6b7894", "#9aa6bd", "#cdd4e0"]
+      },
+      "text-light": {
+        "role": "neutral",
+        "displayName": "Branco-Gelo",
+        "canonical": "#EDF2F7",
+        "tonalRamp": ["#39424c", "#5c6873", "#8a96a3", "#b4bfca", "#d3dce5", "#EDF2F7", "#f3f6fa", "#fafbfd"]
+      },
+      "structural-purple": {
+        "role": "tertiary",
+        "displayName": "Roxo Estrutural",
+        "canonical": "#171958af",
+        "tonalRamp": ["#0a0b15", "#101226", "#171958", "#23266f", "#363a8a", "#5256a8", "#7b7ec7", "#b0b2e0"]
+      },
+      "state-success": { "role": "secondary", "displayName": "Sucesso", "canonical": "#15803d", "tonalRamp": ["#052e16", "#0a3a20", "#14532d", "#166534", "#15803d", "#22a356", "#4ade80", "#bbf7d0"] },
+      "state-error": { "role": "secondary", "displayName": "Erro", "canonical": "#b91c1c", "tonalRamp": ["#3f0d0d", "#5c1212", "#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#f87171", "#fecaca"] },
+      "state-warning": { "role": "secondary", "displayName": "Aviso", "canonical": "#ca8a04", "tonalRamp": ["#422c06", "#5c3d09", "#854d0e", "#a16207", "#ca8a04", "#eab308", "#fbbf24", "#fef08a"] }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Title", "purpose": "Título de cada FeatureContainer, sempre em laranja queimado." },
+      "heading": { "displayName": "Heading", "purpose": "Cabeçalhos de modal, sidebar, accordion." },
+      "body": { "displayName": "Body", "purpose": "Texto corrido e mensagens." },
+      "label": { "displayName": "Label", "purpose": "Rótulos de campo, microtextos de estado, uppercase tracked." },
+      "mono": { "displayName": "Mono", "purpose": "Saída do LogPanel, terminal de execução em tempo real." }
+    },
+    "shadows": [
+      { "name": "overlay", "value": "0 25px 50px -12px rgba(0,0,0,0.5)", "purpose": "Login e corpo do Modal — os únicos elementos que flutuam sobre o resto da interface." },
+      { "name": "component", "value": "0 4px 6px -1px rgba(0,0,0,0.3)", "purpose": "Accordion fechado, separação sutil do painel-mãe." }
+    ],
+    "motion": [
+      { "name": "fade-in", "value": "opacity 0.5s ease-out", "purpose": "Entrada padrão de FeatureContainer." },
+      { "name": "modal-fade", "value": "opacity 0.2s ease-out", "purpose": "Overlay do modal." },
+      { "name": "modal-slide", "value": "transform 0.3s ease-out, opacity 0.3s ease-out", "purpose": "Corpo do modal entrando com leve translateY." },
+      { "name": "sidebar-slide", "value": "transform 0.3s ease-out", "purpose": "Sidebar deslizando da direita (translateX 100% -> 0)." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação primária única por tela (Entrar, Confirmar).",
+      "html": "<button class=\"ds-btn-primary\">Entrar</button>",
+      "css": ".ds-btn-primary { background: #ed5f0c; color: #1A202C; font-weight: 700; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; transition: filter 0.2s ease, transform 0.2s ease; } .ds-btn-primary:hover { filter: brightness(1.1); } .ds-btn-primary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Cancelar/Fechar, sempre ao lado da ação primária.",
+      "html": "<button class=\"ds-btn-secondary\">Fechar</button>",
+      "css": ".ds-btn-secondary { background: #1A202C; color: #EDF2F7; border: 1px solid #4b5563; font-weight: 500; padding: 10px 20px; border-radius: 6px; cursor: pointer; transition: background 0.2s ease; } .ds-btn-secondary:hover { background: #374151; } .ds-btn-secondary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Feature Container",
+      "kind": "card",
+      "refersTo": "panel-glass",
+      "description": "Painel de vidro translúcido que envolve cada uma das 15 features.",
+      "html": "<div class=\"ds-panel\"><h2 class=\"ds-panel-title\">Limpa cache DNS</h2><div class=\"ds-panel-body\">Conteúdo da feature</div></div>",
+      "css": ".ds-panel { background: rgba(45,55,72,0.35); backdrop-filter: blur(12px); border: 1px solid #374151; border-radius: 12px; padding: 24px; color: #EDF2F7; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; } .ds-panel-title { color: #ed5f0c; font-size: 1.5rem; font-weight: 700; margin: 0 0 16px 0; }"
+    },
+    {
+      "name": "Modal",
+      "kind": "custom",
+      "refersTo": "panel-glass",
+      "description": "Diálogo de confirmação/alerta com cor de header por tipo (sucesso/erro/aviso).",
+      "html": "<div class=\"ds-modal-overlay\"><div class=\"ds-modal\"><div class=\"ds-modal-header\">Ação concluída</div><div class=\"ds-modal-body\">A operação foi finalizada com sucesso.</div></div></div>",
+      "css": ".ds-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; } .ds-modal { background: rgba(45,55,72,0.95); border: 1px solid #374151; border-radius: 12px; max-width: 32rem; color: #EDF2F7; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; } .ds-modal-header { padding: 20px; font-size: 1.125rem; font-weight: 600; border-bottom: 1px solid #1f2937; } .ds-modal-body { padding: 20px; font-size: 1rem; line-height: 1.5; }"
+    },
+    {
+      "name": "Editable Field",
+      "kind": "input",
+      "description": "Campo de exibição com edição inline; versão corrigida sem a faixa lateral colorida do legado.",
+      "html": "<div class=\"ds-field\"><span class=\"ds-field-label\">Endereço IP</span><div class=\"ds-field-value\"><span>192.168.0.10</span><button class=\"ds-field-edit\" aria-label=\"Editar\">✎</button></div></div>",
+      "css": ".ds-field { background: #1A202C; border: 1px solid #374151; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; } .ds-field-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.7; text-align: center; margin-bottom: 4px; } .ds-field-value { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.875rem; font-weight: 600; } .ds-field-edit { background: transparent; border: none; color: #EDF2F7; opacity: 0.6; cursor: pointer; transition: opacity 0.2s, color 0.2s; } .ds-field-edit:hover { opacity: 1; color: #ed5f0c; } .ds-field:focus-within { border-color: #171958af; }"
+    },
+    {
+      "name": "Log Panel",
+      "kind": "custom",
+      "description": "Componente assinatura: saída de execução em tempo real estilo terminal.",
+      "html": "<div class=\"ds-log\"><pre>[12:04:01] Limpando cache DNS...\n[12:04:02] Sucesso.</pre></div>",
+      "css": ".ds-log { background: rgba(26,32,44,0.5); border: 1px solid #374151; border-radius: 8px; padding: 16px; overflow-y: auto; } .ds-log pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: Consolas, ui-monospace, monospace; font-size: 0.875rem; color: #EDF2F7; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "O Painel de Controle (HUD do Técnico)",
+    "overview": "BG-SupTec não é um dashboard abstrato — é um painel de controle de vidro que flutua sobre a máquina real sendo atendida. A foto de fundo (a estação de trabalho, com escurecimento de 40%) ancora cada tela ao contexto físico do atendimento; os painéis translúcidos com blur são instrumentos pousados sobre essa cena, não uma camada decorativa. A profundidade vem dessa relação entre fundo fotográfico e vidro — nunca de sombra pesada ou gradiente. A personalidade é técnica e direta: hierarquia clara, uma única cor de destaque (laranja queimado) usada com extrema disciplina, feedback explícito para toda ação. O verniz moderno (blur, transições suaves, profundidade) existe para comunicar precisão e cuidado, nunca para impressionar.",
+    "keyCharacteristics": [
+      "Vidro sobre realidade: cada superfície de UI é translúcida sobre o fundo fotográfico da estação de trabalho, nunca opaca por padrão.",
+      "Um único acento: laranja queimado (#ed5f0c) marca exclusivamente ação primária e estado de foco — nunca decoração.",
+      "Feedback sempre visível: toda ação tem log, modal ou indicador de estado; silêncio nunca é uma resposta válida.",
+      "Profundidade por camada, não por sombra: backdrop-blur + opacidade de superfície substituem box-shadow pesado."
+    ],
+    "rules": [
+      { "name": "A Regra do Acento Único", "body": "O laranja queimado é a única cor com função de \"chame minha atenção\" no sistema. Se duas coisas competem por destaque na mesma tela, uma delas está usando a cor errada.", "section": "colors" },
+      { "name": "A Regra do Vidro sobre Realidade", "body": "Nenhuma superfície de conteúdo é opaca por padrão. Toda superfície flutuante usa dark-blue-light em opacidade parcial com backdrop-blur, deixando o fundo fotográfico sempre perceptível por trás.", "section": "colors" },
+      { "name": "A Regra da Fonte Única", "body": "Segoe UI cobre 100% da interface, exceto a saída de log (Consolas). Não introduzir uma segunda família sans para 'variar' — a hierarquia vem de peso e tamanho, não de troca de fonte.", "section": "typography" },
+      { "name": "A Regra do Plano-por-Padrão", "body": "Superfícies ficam planas em repouso. Sombra só aparece em elementos que literalmente flutuam por cima de outro conteúdo (login, modal) — nunca em cards de listagem ou containers de feature.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar laranja queimado (#ed5f0c) exclusivamente para a ação primária de cada tela — um único ponto de destaque por vez.",
+      "Do manter toda superfície de conteúdo translúcida com backdrop-blur sobre o fundo fotográfico; a profundidade vem dessa camada, não de sombra.",
+      "Do dar feedback explícito (log, modal, ou estado de botão) para toda ação — nunca deixar o técnico sem confirmação do que aconteceu.",
+      "Do usar exclusivamente Segoe UI (corpo/título) e Consolas (log); peso e tamanho carregam a hierarquia, não troca de família.",
+      "Do aplicar sombra (shadow-2xl) apenas em login e modal — os únicos elementos que literalmente flutuam sobre o resto da interface."
+    ],
+    "donts": [
+      "Don't usar faixas laterais coloridas (border-l-4 ou similar) como destaque visual — isso é o anti-padrão 'side-stripe border'; o legado fazia isso no EditableField e a migração corrige isso com borda completa + ícone.",
+      "Don't usar texto em gradiente, eyebrows numerados decorativos ou glassmorphism sem propósito funcional — são clichês de 'IA generativa' explicitamente rejeitados em PRODUCT.md.",
+      "Don't adotar estética de terminal hacker/cyberpunk (verde sobre preto, monoespaçada agressiva) — mesmo em telas que tocam registro e firewall, o tom é de instrumento de precisão, não de ferramenta de invasão.",
+      "Don't criar grades de cards idênticos ou painéis administrativos genéricos estilo CRUD — cada feature tem sua própria composição dentro do FeatureContainer, não um template repetido sem distinção.",
+      "Don't introduzir uma segunda cor de acento — se algo 'precisa' de destaque além do laranja, repensar a hierarquia, não adicionar cor."
+    ]
+  }
+}
