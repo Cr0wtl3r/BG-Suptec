@@ -173,13 +173,13 @@ Mova todo o conteúdo "legado" para uma pasta legacy_code e começe a construir 
 
 ### Slice 11: Bloqueador de Firewall
 
-- [ ] **11.1** Escrever teste: `block_program_in_firewall(path)` cria regras in/out com `netsh advfirewall` → Verify: teste passa
-- [ ] **11.2** Escrever teste: `unblock_program_in_firewall(path)` deleta regras → Verify: teste passa
-- [ ] **11.3** Implementar `domain/security/firewall.rs` com nome de regra `[BG-SupTec] Bloqueio - {exe}` → Verify: regras criadas/deletadas
-- [ ] **11.4** Implementar `list_installed_programs()` via registry (corrigir handle leak do atual com escopo correto) → Verify: lista programas sem leak
-- [ ] **11.5** Implementar `list_executables(path)` com `walkdir` crate → Verify: lista .exe recursivamente
-- [ ] **11.6** Implementar `select_exe_file()` via Tauri dialog API → Verify: dialog abre
-- [ ] **11.7** Criar `BloqueadorFirewall.tsx` — seleção de exe/programa + toggle bloqueio/desbloqueio + status → Verify: visual idêntico, funciona end-to-end
+- [x] **11.1** Escrever teste: `block_program_in_firewall(path)` cria regras in/out com `netsh advfirewall` → Verify: teste passa
+- [x] **11.2** Escrever teste: `unblock_program_in_firewall(path)` deleta regras → Verify: teste passa
+- [x] **11.3** Implementar `domain/security/firewall.rs` com nome de regra `[BG-SupTec] Bloqueio - {exe}` → Verify: regras criadas/deletadas
+- [x] **11.4** Implementar `list_installed_programs()` via registry (corrigir handle leak do atual com escopo correto) → Verify: lista programas sem leak
+- [x] **11.5** Implementar `list_executables(path)` com `walkdir` crate → Verify: lista .exe recursivamente
+- [x] **11.6** Implementar `select_exe_file()` via Tauri dialog API → Verify: dialog abre
+- [x] **11.7** Criar `BloqueadorFirewall.tsx` — seleção de exe/programa + toggle bloqueio/desbloqueio + status → Verify: visual idêntico, funciona end-to-end
 
 **Done When:** Firewall bloqueia/desbloqueia programas, lista programas sem handle leak, seleção de exe funciona.
 
