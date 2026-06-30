@@ -34,4 +34,5 @@ winreg = "0.56.0"
 tokio = { version = "1.52.3", features = ["process", "rt-multi-thread", "macros", "net", "time"] }
 windows-sys = { version = "0.61.2", features = ["Win32_System_SystemInformation"] }
 regex = "1"
+walkdir = "2"
 

@@ -1,3 +1,5 @@
+pub mod firewall;
+
 use crate::ports::{ProcessRunner, RegistryWriter};
 
 /// Network services restarted with auto-start, in order, as part of the

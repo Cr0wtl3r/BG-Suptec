@@ -135,6 +135,10 @@ mod tests {
                 _ => None,
             }
         }
+
+        fn list_local_machine_subkeys(&self, _path: &str) -> Vec<String> {
+            Vec::new()
+        }
     }
 
     struct FakeMemory;

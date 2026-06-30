@@ -14,6 +14,24 @@ impl RegistryReader for WinRegistryReader {
         let key = hklm.open_subkey(path).ok()?;
         key.get_value(name).ok()
     }
+
+    /// Lists subkey names under `HKEY_LOCAL_MACHINE\{path}`. Each subkey
+    /// handle opened by callers iterating this list (e.g.
+    /// `domain::security::firewall::list_installed_programs`) must be a
+    /// local variable scoped to a single loop iteration — `winreg`'s
+    /// `RegKey` closes its handle in `Drop`, so a normally-scoped loop
+    /// closes each handle before the next iteration opens a new one. This
+    /// mirrors (and fixes) the legacy Go handle leak in
+    /// `ObterProgramasInstalados`, where `defer subKey.Close()` inside the
+    /// loop only ran at function return, not per-iteration, holding
+    /// hundreds of handles open for the whole scan.
+    fn list_local_machine_subkeys(&self, path: &str) -> Vec<String> {
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let Ok(key) = hklm.open_subkey(path) else {
+            return Vec::new();
+        };
+        key.enum_keys().filter_map(Result::ok).collect()
+    }
 }
 
 impl RegistryWriter for WinRegistryReader {
