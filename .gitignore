@@ -29,3 +29,4 @@ kms.json
 *.njsproj
 *.sln
 *.sw?
+legacy_code/
