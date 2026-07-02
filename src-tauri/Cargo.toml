@@ -33,8 +33,7 @@ rand = "0.8"
 zeroize = { version = "1", features = ["derive"] }
 winreg = "0.56.0"
 tokio = { version = "1.52.3", features = ["process", "rt-multi-thread", "macros", "net", "time"] }
-windows-sys = { version = "0.61.2", features = ["Win32_System_SystemInformation"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock", "Win32_System_SystemInformation"] }
 regex = "1"
 walkdir = "2"
 chrono = "0.4"
-

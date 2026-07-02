@@ -1,7 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::adapters::memory::WinMemoryReader;
-use crate::adapters::network::PowerShellNetworkReader;
+use crate::adapters::network::NativeNetworkReader;
 use crate::adapters::process::WinProcessRunner;
 use crate::adapters::registry::WinRegistryReader;
 use crate::domain::system::{self, time::adjust_formatting_time, SystemInfo};
@@ -17,7 +17,7 @@ pub async fn obter_informacoes_sistema() -> Result<SystemInfo, String> {
         &hostname(),
         &WinRegistryReader,
         &WinMemoryReader,
-        &PowerShellNetworkReader,
+        &NativeNetworkReader,
     )
     .await)
 }

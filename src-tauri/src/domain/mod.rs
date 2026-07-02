@@ -1,6 +1,11 @@
 pub mod activation;
+pub mod anydesk;
+pub mod disk;
+pub mod formatting_workflow;
 pub mod maintenance;
 pub mod network;
+pub mod office_c2r;
 pub mod personalization;
+pub mod repair;
 pub mod security;
 pub mod system;

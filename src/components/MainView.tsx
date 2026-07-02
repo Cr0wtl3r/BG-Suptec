@@ -12,6 +12,13 @@ import RestaurarPhotoViewer from "./features/RestaurarPhotoViewer";
 import AlterarLayoutTeclado from "./features/AlterarLayoutTeclado";
 import AtivarGpedit from "./features/AtivarGpedit";
 import AgendarDesligamento from "./features/AgendarDesligamento";
+import PoliticasWindows from "./features/PoliticasWindows";
+import ReparosWindows from "./features/ReparosWindows";
+import DiscoWindows from "./features/DiscoWindows";
+import LimpezaAvancada from "./features/LimpezaAvancada";
+import ResetAnyDesk from "./features/ResetAnyDesk";
+import OfficeC2R from "./features/OfficeC2R";
+import ConclusaoFormatacao from "./features/ConclusaoFormatacao";
 
 interface FeatureProps {
   onVoltar: () => void;
@@ -31,6 +38,13 @@ const COMPONENTES: Record<string, ComponentType<FeatureProps>> = {
   "Alterar Layout do Teclado": AlterarLayoutTeclado,
   "Ativar Gpedit.msc (Home)": AtivarGpedit,
   "Agendar Desligamento": AgendarDesligamento,
+  "Políticas do Windows": PoliticasWindows,
+  "Reparos do Windows": ReparosWindows,
+  "Disco e Edição do Windows": DiscoWindows,
+  "Limpeza Avançada": LimpezaAvancada,
+  "Reset AnyDesk": ResetAnyDesk,
+  "Office Click-to-Run": OfficeC2R,
+  "Conclusão de Formatação": ConclusaoFormatacao,
 };
 
 interface MainViewProps {

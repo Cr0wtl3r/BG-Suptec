@@ -1,5 +1,7 @@
 use crate::ports::ProcessRunner;
 
+pub mod cleanup;
+
 /// Flushes the local DNS resolver cache via `ipconfig /flushdns`. Mirrors
 /// legacy `LimpaCacheDNS.svelte`'s `ExecutarComando("ipconfig", ["/flushdns"])`.
 pub async fn clear_dns_cache(runner: &impl ProcessRunner) -> Result<String, String> {
@@ -102,7 +104,10 @@ mod tests {
 
         super::clear_dns_cache(&runner).await.unwrap();
 
-        assert_eq!(runner.calls_for("ipconfig"), vec![vec!["/flushdns".to_string()]]);
+        assert_eq!(
+            runner.calls_for("ipconfig"),
+            vec![vec!["/flushdns".to_string()]]
+        );
     }
 
     #[tokio::test]
@@ -111,7 +116,10 @@ mod tests {
 
         super::disable_hibernation(&runner).await.unwrap();
 
-        assert_eq!(runner.calls_for("powercfg"), vec![vec!["/h".to_string(), "off".to_string()]]);
+        assert_eq!(
+            runner.calls_for("powercfg"),
+            vec![vec!["/h".to_string(), "off".to_string()]]
+        );
     }
 
     /// Records every operation (process calls and file deletions) in a

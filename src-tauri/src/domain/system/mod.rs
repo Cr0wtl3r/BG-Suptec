@@ -4,6 +4,7 @@ use crate::ports::{MemoryReader, NetworkReader, RegistryReader};
 
 pub mod gpedit;
 pub mod keyboard;
+pub mod policies;
 pub mod power;
 pub mod time;
 
@@ -11,9 +12,6 @@ const REG_PATH_WINDOWS_VERSION: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVe
 const REG_PATH_PROCESSOR: &str = r"HARDWARE\DESCRIPTION\System\CentralProcessor\0";
 const NA: &str = "N/A";
 
-/// Aggregated system information shown in the "Painel de Informações"
-/// feature. Field names are serialized in Portuguese to match the
-/// existing frontend contract ported from the legacy Svelte app.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct SystemInfo {
     #[serde(rename = "nomeComputador")]
@@ -104,9 +102,7 @@ pub async fn get_info(
             .as_ref()
             .and_then(|n| n.dns_secondary.clone())
             .unwrap_or_else(|| NA.to_string()),
-        interface_ativa: net_info
-            .map(|n| n.interface_name)
-            .unwrap_or_default(),
+        interface_ativa: net_info.map(|n| n.interface_name).unwrap_or_default(),
     }
 }
 
@@ -119,22 +115,18 @@ mod tests {
     impl RegistryReader for FakeRegistry {
         fn read_local_machine_string(&self, path: &str, name: &str) -> Option<String> {
             match (path, name) {
-                (
-                    r"SOFTWARE\Microsoft\Windows NT\CurrentVersion",
-                    "ProductName",
-                ) => Some("Windows 11 Pro".to_string()),
-                (
-                    r"SOFTWARE\Microsoft\Windows NT\CurrentVersion",
-                    "DisplayVersion",
-                ) => Some("23H2".to_string()),
-                (
-                    r"SOFTWARE\Microsoft\Windows NT\CurrentVersion",
-                    "CurrentBuild",
-                ) => Some("22631".to_string()),
-                (
-                    r"HARDWARE\DESCRIPTION\System\CentralProcessor\0",
-                    "ProcessorNameString",
-                ) => Some("Intel(R) Core(TM) i7-12700K".to_string()),
+                (r"SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName") => {
+                    Some("Windows 11 Pro".to_string())
+                }
+                (r"SOFTWARE\Microsoft\Windows NT\CurrentVersion", "DisplayVersion") => {
+                    Some("23H2".to_string())
+                }
+                (r"SOFTWARE\Microsoft\Windows NT\CurrentVersion", "CurrentBuild") => {
+                    Some("22631".to_string())
+                }
+                (r"HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString") => {
+                    Some("Intel(R) Core(TM) i7-12700K".to_string())
+                }
                 _ => None,
             }
         }

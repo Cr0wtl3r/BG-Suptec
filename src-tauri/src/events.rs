@@ -24,6 +24,13 @@ pub const RESTAURAR_PHOTOVIEWER_FINALIZADO: &str = "log:restaurar:photoviewer:fi
 /// (the stub listened for this event, but no Go code ever emitted it —
 /// this is the first real emitter).
 pub const LOG_ATIVAR_GPEDIT: &str = "log:ativar:gpedit";
+pub const LOG_POLITICAS: &str = "log:politicas";
+pub const LOG_REPARO: &str = "log:reparo";
+pub const LOG_DISCO: &str = "log:disco";
+pub const LOG_LIMPEZA: &str = "log:limpeza";
+pub const LOG_ANYDESK: &str = "log:anydesk";
+pub const LOG_OFFICE_C2R: &str = "log:office:c2r";
+pub const LOG_FORMATACAO: &str = "log:formatacao";
 
 /// Emits a single log line on `event_name`. Mirrors the legacy
 /// `emitLogRunner`'s fire-and-forget semantics: if the window has already

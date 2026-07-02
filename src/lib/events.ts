@@ -16,4 +16,11 @@ export const EVENTOS = {
   logRestaurarPhotoviewer: "log:restaurar:photoviewer",
   restaurarPhotoviewerFinalizado: "log:restaurar:photoviewer:finalizado",
   logAtivarGpedit: "log:ativar:gpedit",
+  logPoliticas: "log:politicas",
+  logReparo: "log:reparo",
+  logDisco: "log:disco",
+  logLimpeza: "log:limpeza",
+  logAnydesk: "log:anydesk",
+  logOfficeC2r: "log:office:c2r",
+  logFormatacao: "log:formatacao",
 } as const;

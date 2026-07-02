@@ -1,8 +1,6 @@
 use crate::adapters::process;
 use crate::ports::CscriptRunner;
 
-/// Resolves a WSH script name (e.g. `slmgr.vbs`) to its full path under
-/// `%SystemRoot%\System32`, where Windows ships `slmgr.vbs`/`ospp.vbs`.
 fn resolve_script_path(script_path: &str) -> String {
     let system_root = std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".to_string());
     format!(r"{system_root}\System32\{script_path}")

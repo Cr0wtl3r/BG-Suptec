@@ -1,10 +1,17 @@
 pub mod activation;
+pub mod anydesk;
 pub mod auth;
+pub mod cleanup;
+pub mod disk;
+pub mod formatting;
 pub mod gpedit;
 pub mod keyboard;
 pub mod maintenance;
 pub mod network;
+pub mod office_c2r;
 pub mod personalization;
+pub mod policies;
 pub mod power;
+pub mod repair;
 pub mod security;
 pub mod system_info;

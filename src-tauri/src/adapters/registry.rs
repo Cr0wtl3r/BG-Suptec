@@ -1,4 +1,5 @@
-use winreg::enums::{HKEY_CLASSES_ROOT, HKEY_LOCAL_MACHINE};
+use std::io;
+use winreg::enums::{HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
 use winreg::RegKey;
 
 use crate::ports::{RegistryReader, RegistryWriter};
@@ -53,13 +54,73 @@ impl RegistryWriter for WinRegistryReader {
             .map_err(|e| format!("falha ao escrever o valor {name} em {path}: {e}"))
     }
 
-    fn write_local_machine_string(&self, path: &str, name: &str, value: &str) -> Result<(), String> {
+    fn write_local_machine_string(
+        &self,
+        path: &str,
+        name: &str,
+        value: &str,
+    ) -> Result<(), String> {
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
         let (key, _) = hklm
             .create_subkey(path)
             .map_err(|e| format!("falha ao abrir/criar a chave {path}: {e}"))?;
         key.set_value(name, &value)
             .map_err(|e| format!("falha ao escrever o valor {name} em {path}: {e}"))
+    }
+
+    fn write_current_user_dword(&self, path: &str, name: &str, value: u32) -> Result<(), String> {
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let (key, _) = hkcu
+            .create_subkey(path)
+            .map_err(|e| format!("falha ao abrir/criar a chave HKCU\\{path}: {e}"))?;
+        key.set_value(name, &value)
+            .map_err(|e| format!("falha ao escrever o valor HKCU\\{path}\\{name}: {e}"))
+    }
+
+    fn write_current_user_string(&self, path: &str, name: &str, value: &str) -> Result<(), String> {
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let (key, _) = hkcu
+            .create_subkey(path)
+            .map_err(|e| format!("falha ao abrir/criar a chave HKCU\\{path}: {e}"))?;
+        key.set_value(name, &value)
+            .map_err(|e| format!("falha ao escrever o valor HKCU\\{path}\\{name}: {e}"))
+    }
+
+    fn delete_local_machine_value(&self, path: &str, name: &str) -> Result<(), String> {
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let key = match hklm.open_subkey_with_flags(path, winreg::enums::KEY_SET_VALUE) {
+            Ok(key) => key,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(()),
+            Err(e) => return Err(format!("falha ao abrir HKLM\\{path}: {e}")),
+        };
+        match key.delete_value(name) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(format!("falha ao remover HKLM\\{path}\\{name}: {e}")),
+        }
+    }
+
+    fn delete_current_user_value(&self, path: &str, name: &str) -> Result<(), String> {
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let key = match hkcu.open_subkey_with_flags(path, winreg::enums::KEY_SET_VALUE) {
+            Ok(key) => key,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(()),
+            Err(e) => return Err(format!("falha ao abrir HKCU\\{path}: {e}")),
+        };
+        match key.delete_value(name) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(format!("falha ao remover HKCU\\{path}\\{name}: {e}")),
+        }
+    }
+
+    fn delete_local_machine_tree(&self, path: &str) -> Result<(), String> {
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        match hklm.delete_subkey_all(path) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(format!("falha ao remover HKLM\\{path}: {e}")),
+        }
     }
 }
 
@@ -71,7 +132,10 @@ mod tests {
     fn reads_windows_product_name_from_real_registry() {
         let reader = WinRegistryReader;
         let value = reader
-            .read_local_machine_string(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName")
+            .read_local_machine_string(
+                r"SOFTWARE\Microsoft\Windows NT\CurrentVersion",
+                "ProductName",
+            )
             .expect("ProductName should exist on any Windows machine");
 
         assert!(value.to_lowercase().contains("windows"));

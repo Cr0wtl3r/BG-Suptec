@@ -16,6 +16,7 @@ const MODULOS = [
       "Limpar Cache DNS",
       "Limpar e Reiniciar Spool de Impressão",
       "Desativar Hibernação do Windows",
+      "Limpeza Avançada",
     ],
   },
   {
@@ -26,11 +27,20 @@ const MODULOS = [
       "Ativar Proteção do Sistema",
       "Bloqueador de Programas no Firewall",
       "Restaurar Visualizador de Fotos",
+      "Reparos do Windows",
+      "Reset AnyDesk",
+      "Conclusão de Formatação",
     ],
   },
   {
     nome: "Personalização e Sistema",
-    funcionalidades: ["Ativar Gpedit.msc (Home)", "Alterar Layout do Teclado"],
+    funcionalidades: [
+      "Ativar Gpedit.msc (Home)",
+      "Alterar Layout do Teclado",
+      "Políticas do Windows",
+      "Disco e Edição do Windows",
+      "Office Click-to-Run",
+    ],
   },
   {
     nome: "Gerenciador de Energia",

@@ -172,9 +172,9 @@ pub async fn fix_network_sharing(
 /// `Enable-ComputerRestore` is a PowerShell cmdlet (no standalone .exe), so
 /// it's invoked via `ProcessRunner` running `powershell` directly with
 /// literal argv — same approach as `domain::system::time::adjust_formatting_time`
-/// uses for `w32tm` — rather than `adapters::powershell::run_script`, which
-/// hardcodes the real `WinProcessRunner` and isn't mockable. Restore must
-/// be enabled before shadow storage can be sized, so step order matters.
+/// uses for `w32tm` — rather than a concrete adapter that would hardcode the
+/// real `WinProcessRunner` and become non-mockable. Restore must be enabled
+/// before shadow storage can be sized, so step order matters.
 /// Each step is non-fatal, matching every other slice's
 /// `run_and_log` semantics.
 pub async fn enable_system_protection(runner: &impl ProcessRunner, on_log: impl Fn(&str)) {
